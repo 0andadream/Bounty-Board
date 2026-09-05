@@ -1,0 +1,13 @@
+name = "board"
+main = "worker/index.ts"
+compatibility_date = "2025-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+APP_NAME = "Board"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "board"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "worker/migrations"

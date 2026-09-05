@@ -1,0 +1,253 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-desk: #3a342c;
+  --color-paper: #f3ead8;
+  --color-paper-2: #e9dfc8;
+  --color-ink: #1c1914;
+  --color-muted: #6b655c;
+  --color-rule: #c9c0b0;
+  --color-accent: #c42b1c;
+  --color-accent-ink: #c42b1c;
+}
+
+:root {
+  color-scheme: light;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #3a342c;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-serif);
+  color: #1c1914;
+  background: #3a342c;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-root {
+  min-height: 100dvh;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #4a4339 0%, #3a342c 55%),
+    #3a342c;
+}
+
+.app-frame {
+  min-height: 100dvh;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.screen {
+  min-height: 100dvh;
+  padding: 20px 16px calc(88px + var(--safe-bottom));
+}
+
+.paper {
+  background: #f3ead8;
+  color: #1c1914;
+  border: 1px solid #d8cdb6;
+  box-shadow:
+    0 1px 0 #fff8ea inset,
+    0 12px 28px #1c191433;
+}
+
+.ticket {
+  background-image:
+    linear-gradient(#e9dfc8 1px, transparent 1px);
+  background-size: 100% 28px;
+  background-position: 0 12px;
+}
+
+.rule {
+  border: 0;
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    #c9c0b0 0 6px,
+    transparent 6px 10px
+  );
+}
+
+.perforation {
+  position: relative;
+  height: 18px;
+  margin: 0 -1px;
+}
+
+.perforation::before {
+  content: "";
+  position: absolute;
+  inset: 8px 0 auto;
+  border-top: 2px dashed #c9c0b0;
+}
+
+.perforation::after,
+.perforation span {
+  content: "";
+  position: absolute;
+  top: 1px;
+  width: 18px;
+  height: 18px;
+  background: #3a342c;
+  border-radius: 50%;
+}
+
+.perforation::after {
+  left: -10px;
+}
+
+.perforation span {
+  right: -10px;
+}
+
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2.5px solid #c42b1c;
+  color: #c42b1c;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 6px 9px;
+  transform: rotate(-11deg);
+  border-radius: 3px;
+  background: color-mix(in srgb, #c42b1c 6%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #c42b1c 28%, transparent);
+}
+
+.stamp-paid {
+  transform: rotate(-14deg);
+  font-size: 18px;
+  padding: 10px 12px;
+  letter-spacing: 0.28em;
+}
+
+.money {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: #c42b1c;
+  letter-spacing: -0.02em;
+}
+
+.addr {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.btn-accent {
+  background: #c42b1c;
+  color: #f3ead8;
+  border: 0;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+.btn-accent:disabled {
+  opacity: 0.45;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #1c1914;
+  border: 1px solid #c9c0b0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field {
+  width: 100%;
+  background: #faf6ec;
+  border: 1px solid #c9c0b0;
+  color: #1c1914;
+  padding: 12px 12px;
+  border-radius: 2px;
+}
+
+.field:focus {
+  outline: 2px solid color-mix(in srgb, #c42b1c 35%, transparent);
+  outline-offset: 1px;
+}
+
+.nav {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: 100%;
+  max-width: 430px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  background: #f3ead8;
+  border-top: 1px solid #d8cdb6;
+  padding: 8px 8px calc(10px + var(--safe-bottom));
+}
+
+.nav a,
+.nav button.linkish {
+  text-align: center;
+  text-decoration: none;
+  color: #6b655c;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 8px 4px;
+  background: none;
+  border: 0;
+}
+
+.nav a.active {
+  color: #c42b1c;
+}
+
+.tab {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6b655c;
+  background: none;
+  border: 0;
+  padding: 8px 0;
+  border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+  color: #c42b1c;
+  border-bottom-color: #c42b1c;
+}

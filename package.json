@@ -1,0 +1,43 @@
+{
+  "name": "board",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Board — a bounty board Mini App for Nimiq Pay. Post a task, lock a reward, pay wallet to wallet.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0andadream/Bounty-Board.git"
+  },
+  "scripts": {
+    "dev": "concurrently -n web,api -c cyan,magenta \"vite\" \"wrangler dev --port 8787\"",
+    "dev:web": "vite",
+    "dev:api": "wrangler dev --port 8787",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host",
+    "test": "tsx --test shared/machine.test.ts",
+    "deploy": "npm run build && wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply board --local",
+    "db:migrate:remote": "wrangler d1 migrations apply board --remote"
+  },
+  "dependencies": {
+    "@nimiq/mini-app-sdk": "^0.1.0",
+    "hono": "^4.13.5",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "concurrently": "^9.2.4",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.20.5",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2",
+    "wrangler": "^4.86.0"
+  }
+}
