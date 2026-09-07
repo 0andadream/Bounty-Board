@@ -3,13 +3,8 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useProfile } from '../context/ProfileContext.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
 import { shortWallet } from '../lib/format.ts'
+import { goBack } from './BackKey.tsx'
 import { Avatar } from './ui.tsx'
-import { Logo } from './Logo.tsx'
-
-function goBack(navigate: ReturnType<typeof useNavigate>) {
-  if (window.history.length > 1) navigate(-1)
-  else navigate('/')
-}
 
 export function Shell() {
   const wallet = useWallet()
@@ -18,7 +13,6 @@ export function Shell() {
   const location = useLocation()
   const connected = wallet.nimiqAddress || wallet.ethAddress
   const chipWallet = wallet.nimiqAddress ?? wallet.ethAddress ?? 'board'
-  const canGoBack = location.pathname !== '/'
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -26,6 +20,7 @@ export function Shell() {
       const target = event.target as HTMLElement | null
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
       if (document.querySelector('.modal-back')) return
+      if (location.pathname === '/') return
       if (event.key === 'Backspace') event.preventDefault()
       goBack(navigate)
     }
@@ -37,26 +32,14 @@ export function Shell() {
     <div className="app-root">
       <div className="shell">
         <header className="topbar">
-          {canGoBack ? (
-            <button
-              type="button"
-              className="back-key"
-              aria-label="Go back"
-              title="Go back (Esc)"
-              onClick={() => goBack(navigate)}
-            >
-              ← Back
-            </button>
-          ) : null}
-          <NavLink to="/" className="brand" aria-label="Board">
-            <Logo className="brand-logo" />
-            <span className="brand-word">BOARD</span>
+          <NavLink to="/" className="brand" aria-label="Bounty Board">
+            <span className="brand-word">BOUNTY BOARD</span>
           </NavLink>
           <nav className="top-links">
-            <NavLink to="/" end>
+            <NavLink to="/bounties">
               Bounties
             </NavLink>
-            <NavLink to="/mine">My work</NavLink>
+            <NavLink to="/mine">Mine</NavLink>
           </nav>
           <div className="topbar-end">
             {connected ? (

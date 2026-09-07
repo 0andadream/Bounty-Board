@@ -3,23 +3,15 @@ import type { Bounty, Profile, ViewStatus } from '@shared/types.ts'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  activityActor,
-  activityHref,
-  activityProfile,
-  activityVerb,
-  activityWallet,
   actorName,
   amountNumber,
   dueLabel,
   endingSoon,
   formatWallet,
-  money,
   shortWallet,
   statusLabel,
   submissionsCount,
   subsLabel,
-  timeAgo,
-  type Activity,
 } from '../lib/format.ts'
 
 const MARKS = ['#d8ff3e', '#7dd3fc', '#f9a8d4', '#fdba74', '#a5b4fc', '#86efac']
@@ -97,11 +89,15 @@ export function Avatar({
 }: {
   profile?: Profile | null
   wallet: string
-  size?: 'sm' | 'lg'
+  size?: 'sm' | 'lg' | 'xl'
 }) {
   const label = (profile?.username ?? wallet).replace(/\s+/g, '')
   return (
-    <div className={`avatar ${size === 'lg' ? 'avatar-lg' : ''}`} style={{ background: markColor(wallet) }} aria-hidden="true">
+    <div
+      className={`avatar ${size === 'lg' ? 'avatar-lg' : ''} ${size === 'xl' ? 'avatar-xl' : ''}`}
+      style={{ background: markColor(wallet) }}
+      aria-hidden="true"
+    >
       {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <span>{label.slice(0, 2)}</span>}
     </div>
   )
@@ -166,38 +162,6 @@ export function BountyCard({
       </div>
       <BountyThumb id={bounty.id} imageUrl={bounty.imageUrl} />
     </Link>
-  )
-}
-
-export function ActivityRail({ items, now }: { items: Activity[]; now: number }) {
-  return (
-    <aside className="activity-rail">
-      <div className="activity-rail-head">
-        <span className="activity-dot" aria-hidden="true" />
-        <h2>Recent activity</h2>
-      </div>
-      {items.length === 0 ? (
-        <p className="activity-empty">Nothing yet. Post or claim a bounty and it shows up here.</p>
-      ) : (
-        <div className="activity-list">
-          {items.map((item) => (
-            <Link key={item.id} to={activityHref(item)} className="activity-item">
-              <Avatar profile={activityProfile(item)} wallet={activityWallet(item)} />
-              <div className="activity-copy">
-                <p>
-                  <strong>{activityActor(item)}</strong> {activityVerb(item.kind)}
-                </p>
-                <p className="activity-title">{item.bounty.title}</p>
-                <p className="activity-meta">
-                  {timeAgo(item.at, now)}
-                  {item.kind === 'paid' ? ` · ${money(item.bounty.rewardMinor, item.bounty.token)}` : ''}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-    </aside>
   )
 }
 

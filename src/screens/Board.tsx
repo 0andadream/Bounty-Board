@@ -1,12 +1,12 @@
 import type { BoardStats, Bounty, BountyListTab, BountySort } from '@shared/types.ts'
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { PostBountyModal } from '../components/PostBountyModal.tsx'
-import { ActivityRail, BountyCard, EmptyTicket, ErrorNote, FeedHead } from '../components/ui.tsx'
+import { SideRail } from '../components/SideRail.tsx'
+import { BountyCard, EmptyTicket, ErrorNote, FeedHead } from '../components/ui.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
 import { listAllBounties, listBounties, toggleLike } from '../lib/api.ts'
 import { toErrorMessage } from '../lib/errors.ts'
-import { activitiesFromBounties } from '../lib/format.ts'
 
 const TABS: Array<{ id: BountyListTab; label: string }> = [
   { id: 'open', label: 'Open' },
@@ -15,7 +15,7 @@ const TABS: Array<{ id: BountyListTab; label: string }> = [
 ]
 
 const SORTS: Array<{ id: BountySort; label: string }> = [
-  { id: 'reward', label: 'Highest value' },
+  { id: 'reward', label: 'Highest reward' },
   { id: 'new', label: 'Newest' },
   { id: 'ending', label: 'Ending soon' },
 ]
@@ -73,8 +73,6 @@ export function BoardScreen() {
     }
   }
 
-  const activities = activitiesFromBounties(tape)
-
   return (
     <main className="board-page">
       <div className="board-main">
@@ -83,9 +81,6 @@ export function BoardScreen() {
           <h1 className="mt-0 mb-1 text-[34px] tracking-[-0.05em]">Bounties</h1>
           <p className="m-0 text-[14px] text-muted">Search and filter open bounties</p>
         </div>
-        <Link to="/?create=1" className="btn-accent no-underline">
-          Post bounty
-        </Link>
       </div>
 
       <div className="stats">
@@ -136,6 +131,13 @@ export function BoardScreen() {
             ))}
           </select>
         </label>
+        <button
+          type="button"
+          className={`toolbar-btn ${tab === 'claimed' ? 'on' : ''}`}
+          onClick={() => setTab('claimed')}
+        >
+          Submissions
+        </button>
       </div>
 
       {loading ? (
@@ -155,7 +157,14 @@ export function BoardScreen() {
         </div>
       )}
       </div>
-      <ActivityRail items={activities} now={now} />
+      <SideRail
+        bounties={tape}
+        now={now}
+        onOpenAll={() => {
+          setTab('open')
+          setSort('reward')
+        }}
+      />
       <PostBountyModal
         open={createOpen}
         onClose={() => {

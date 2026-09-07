@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BackKey } from '../components/BackKey.tsx'
 import { Banner, ErrorNote } from '../components/ui.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
 import { listNimiqAccounts, readNimiqNetwork, shouldUseMiniApp } from '../providers/nimiq.ts'
@@ -34,6 +35,7 @@ export function Probe() {
 
   return (
     <main className="screen">
+      <BackKey />
       <p className="m-0 text-[13px] text-muted">Wallet check</p>
       <h1 className="mt-1 mb-6 text-[36px] tracking-[-0.05em]">Connect</h1>
       <div className="panel max-w-[640px]">

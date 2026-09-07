@@ -146,6 +146,9 @@ export async function saveProfile(input: {
   wallet: string
   username: string
   avatarUrl?: string | null
+  coverUrl?: string | null
+  location?: string | null
+  skills?: string | null
 }): Promise<Profile> {
   const body = await request<{ profile: Profile }>('/api/profiles', {
     method: 'POST',

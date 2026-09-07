@@ -6,7 +6,13 @@ import { useWallet } from './WalletContext.tsx'
 type ProfileContextValue = {
   me: Profile | null
   wallet: string | null
-  save: (username: string, avatarUrl: string | null) => Promise<Profile>
+  save: (input: {
+    username: string
+    avatarUrl: string | null
+    coverUrl?: string | null
+    location?: string | null
+    skills?: string | null
+  }) => Promise<Profile>
   refresh: () => Promise<void>
 }
 
@@ -43,9 +49,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   const save = useCallback(
-    async (username: string, avatarUrl: string | null) => {
+    async (input: {
+      username: string
+      avatarUrl: string | null
+      coverUrl?: string | null
+      location?: string | null
+      skills?: string | null
+    }) => {
       if (!walletId) throw new Error('Connect a wallet to set a profile.')
-      const next = await postProfile({ wallet: walletId, username, avatarUrl })
+      const next = await postProfile({ wallet: walletId, ...input })
       setMe(next)
       return next
     },

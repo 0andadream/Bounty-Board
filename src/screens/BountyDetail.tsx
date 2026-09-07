@@ -4,6 +4,7 @@ import { sameAddress } from '@shared/address.ts'
 import type { Bounty } from '@shared/types.ts'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { BackKey } from '../components/BackKey.tsx'
 import { SubmitModal } from '../components/SubmitModal.tsx'
 import { Avatar, Banner, ErrorNote, LikeButton, PersonLine, Stamp } from '../components/ui.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
@@ -56,6 +57,7 @@ export function BountyDetail() {
   if (!bounty && error) {
     return (
       <main className="screen">
+        <BackKey />
         <ErrorNote message={error} />
       </main>
     )
@@ -64,6 +66,7 @@ export function BountyDetail() {
   if (!bounty) {
     return (
       <main className="screen">
+        <BackKey />
         <p className="text-muted">Loading bounty…</p>
       </main>
     )
@@ -153,18 +156,17 @@ export function BountyDetail() {
     <main className="bounty-page">
       <div className="bounty-main">
         <p className="bounty-crumb">
-          <Link to="/" className="text-muted no-underline">
+          <Link to="/bounties" className="text-muted no-underline">
             Bounties
           </Link>
           <span className="text-muted"> / </span>
           <span>{bounty.title}</span>
         </p>
 
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Stamp status={status} />
-            <span className="token-pill">{bounty.token}</span>
-          </div>
+        <div className="bounty-status-row">
+          <BackKey />
+          <Stamp status={status} />
+          <span className="token-pill">{bounty.token}</span>
           <LikeButton likes={bounty.likes} liked={bounty.liked} onToggle={() => void onLike()} />
         </div>
 

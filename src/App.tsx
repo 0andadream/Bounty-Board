@@ -4,6 +4,7 @@ import { ProfileProvider } from './context/ProfileContext.tsx'
 import { WalletProvider } from './context/WalletContext.tsx'
 import { BoardScreen } from './screens/Board.tsx'
 import { BountyDetail } from './screens/BountyDetail.tsx'
+import { Landing } from './screens/Landing.tsx'
 import { MyWork } from './screens/MyWork.tsx'
 import { Probe } from './screens/Probe.tsx'
 import { ProfileScreen } from './screens/Profile.tsx'
@@ -16,9 +17,10 @@ export default function App() {
       <ProfileProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route element={<Shell />}>
-              <Route path="/" element={<BoardScreen />} />
-              <Route path="/new" element={<Navigate to="/?create=1" replace />} />
+              <Route path="/bounties" element={<BoardScreen />} />
+              <Route path="/new" element={<Navigate to="/bounties?create=1" replace />} />
               <Route path="/mine" element={<MyWork />} />
               <Route path="/profile" element={<ProfileScreen />} />
               <Route path="/u/:username" element={<PublicProfile />} />

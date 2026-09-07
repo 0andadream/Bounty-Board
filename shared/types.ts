@@ -6,6 +6,9 @@ export type Profile = {
   wallet: string
   username: string
   avatarUrl: string | null
+  coverUrl: string | null
+  location: string | null
+  skills: string | null
 }
 
 export type Bounty = {

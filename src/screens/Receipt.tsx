@@ -2,6 +2,7 @@ import { paymentMemo } from '@shared/money.ts'
 import type { Bounty } from '@shared/types.ts'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { BackKey } from '../components/BackKey.tsx'
 import { ErrorNote, Stamp } from '../components/ui.tsx'
 import { getBounty } from '../lib/api.ts'
 import { toErrorMessage } from '../lib/errors.ts'
@@ -37,6 +38,7 @@ export function Receipt() {
   if (error) {
     return (
       <main className="screen">
+        <BackKey />
         <ErrorNote message={error} />
       </main>
     )
@@ -45,6 +47,7 @@ export function Receipt() {
   if (!bounty) {
     return (
       <main className="screen">
+        <BackKey />
         <p className="text-muted">Printing receipt…</p>
       </main>
     )
@@ -53,6 +56,7 @@ export function Receipt() {
   if (bounty.status !== 'paid' || !bounty.txHash || !bounty.hunter || !bounty.paidAt) {
     return (
       <main className="screen">
+        <BackKey />
         <div className="paper px-4 py-8 text-center">
           <p className="m-0 italic text-muted">This ticket is not paid yet.</p>
           <Link to={`/b/${bounty.id}`} className="mt-4 inline-block text-ink">
@@ -99,9 +103,7 @@ export function Receipt() {
 
   return (
     <main className="screen">
-      <Link to={`/b/${bounty.id}`} className="text-[13px] text-muted no-underline">
-        ← Bounty
-      </Link>
+      <BackKey />
       <article className="paper relative mt-3 overflow-hidden">
         <div className="perforation">
           <span />

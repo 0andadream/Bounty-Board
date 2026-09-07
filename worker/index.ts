@@ -83,6 +83,9 @@ const SCHEMA = [
     username TEXT NOT NULL,
     username_key TEXT NOT NULL UNIQUE,
     avatar_url TEXT,
+    cover_url TEXT,
+    location TEXT,
+    skills TEXT,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   )`,
@@ -94,6 +97,9 @@ type ProfileRow = {
   username: string
   username_key: string
   avatar_url: string | null
+  cover_url?: string | null
+  location?: string | null
+  skills?: string | null
   created_at: number
   updated_at: number
 }
@@ -140,7 +146,18 @@ function mapProfile(row: ProfileRow): Profile {
     wallet: row.wallet,
     username: row.username,
     avatarUrl: row.avatar_url ?? null,
+    coverUrl: row.cover_url ?? null,
+    location: row.location ?? null,
+    skills: row.skills ?? null,
   }
+}
+
+function parseOptionalText(input: unknown, label: string, max: number): string | null {
+  if (typeof input !== 'string') return null
+  const value = input.trim()
+  if (!value) return null
+  if (value.length > max) throw new Error(`${label} must be ${max} characters or less.`)
+  return value
 }
 
 function parseUsername(input: unknown): { username: string; key: string } {
@@ -241,6 +258,13 @@ async function ensureSchema(db: D1Database): Promise<void> {
   for (const column of ['image_url TEXT', 'proof_note TEXT', 'proof_image TEXT']) {
     try {
       await db.prepare(`ALTER TABLE bounties ADD COLUMN ${column}`).run()
+    } catch {
+      // column already exists
+    }
+  }
+  for (const column of ['cover_url TEXT', 'location TEXT', 'skills TEXT']) {
+    try {
+      await db.prepare(`ALTER TABLE profiles ADD COLUMN ${column}`).run()
     } catch {
       // column already exists
     }
@@ -378,10 +402,20 @@ app.post('/api/profiles', async (c) => {
     return jsonError(error instanceof Error ? error.message : 'Invalid username.')
   }
   let avatarUrl: string | null = null
+  let coverUrl: string | null = null
   try {
     avatarUrl = normalizeImage(body.avatarUrl)
+    coverUrl = normalizeImage(body.coverUrl)
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : 'Invalid image.')
+  }
+  let location: string | null
+  let skills: string | null
+  try {
+    location = parseOptionalText(body.location, 'Location', 80)
+    skills = parseOptionalText(body.skills, 'Skills', 80)
+  } catch (error) {
+    return jsonError(error instanceof Error ? error.message : 'Invalid profile field.')
   }
 
   const wallet = likeWalletKey(walletRaw)
@@ -394,15 +428,15 @@ app.post('/api/profiles', async (c) => {
   const existing = await c.env.DB.prepare('SELECT wallet FROM profiles WHERE wallet = ?').bind(wallet).first()
   if (existing) {
     await c.env.DB.prepare(
-      'UPDATE profiles SET username = ?, username_key = ?, avatar_url = ?, updated_at = ? WHERE wallet = ?',
+      `UPDATE profiles SET username = ?, username_key = ?, avatar_url = ?, cover_url = ?, location = ?, skills = ?, updated_at = ? WHERE wallet = ?`,
     )
-      .bind(username, key, avatarUrl, clock, wallet)
+      .bind(username, key, avatarUrl, coverUrl, location, skills, clock, wallet)
       .run()
   } else {
     await c.env.DB.prepare(
-      'INSERT INTO profiles (wallet, username, username_key, avatar_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+      `INSERT INTO profiles (wallet, username, username_key, avatar_url, cover_url, location, skills, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-      .bind(wallet, username, key, avatarUrl, clock, clock)
+      .bind(wallet, username, key, avatarUrl, coverUrl, location, skills, clock, clock)
       .run()
   }
 

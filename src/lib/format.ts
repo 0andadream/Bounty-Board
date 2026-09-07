@@ -146,6 +146,63 @@ export function activityHref(item: Activity): string {
   return item.kind === 'paid' ? `/b/${item.bounty.id}/receipt` : `/b/${item.bounty.id}`
 }
 
+export type BoardLeader = {
+  wallet: string
+  profile?: Profile | null
+  token: Token
+  amountMinor: bigint
+  count: number
+}
+
+export function topOpenBounties(bounties: Bounty[], now: number, limit = 3): Bounty[] {
+  return bounties
+    .filter((bounty) => bounty.status === 'open' && bounty.deadline > now)
+    .sort((a, b) => Number(BigInt(b.rewardMinor) - BigInt(a.rewardMinor)))
+    .slice(0, limit)
+}
+
+export function recentPayouts(bounties: Bounty[], limit = 6): Bounty[] {
+  return bounties
+    .filter((bounty) => bounty.status === 'paid' && bounty.hunter && bounty.paidAt)
+    .sort((a, b) => (b.paidAt ?? 0) - (a.paidAt ?? 0))
+    .slice(0, limit)
+}
+
+export function paidLeaders(
+  bounties: Bounty[],
+  role: 'hunter' | 'poster',
+  since: number,
+  limit = 5,
+): BoardLeader[] {
+  const map = new Map<string, BoardLeader>()
+  for (const bounty of bounties) {
+    if (bounty.status !== 'paid' || !bounty.paidAt || bounty.paidAt < since) continue
+    const wallet = role === 'hunter' ? bounty.hunter : bounty.poster
+    if (!wallet) continue
+    const profile = role === 'hunter' ? bounty.hunterProfile : bounty.posterProfile
+    const current = map.get(wallet)
+    if (!current) {
+      map.set(wallet, {
+        wallet,
+        profile,
+        token: bounty.token,
+        amountMinor: BigInt(bounty.rewardMinor),
+        count: 1,
+      })
+      continue
+    }
+    current.count += 1
+    if (current.token === bounty.token) current.amountMinor += BigInt(bounty.rewardMinor)
+  }
+  return [...map.values()]
+    .sort((a, b) => {
+      const amount = b.amountMinor - a.amountMinor
+      if (amount !== 0n) return amount > 0n ? 1 : -1
+      return b.count - a.count
+    })
+    .slice(0, limit)
+}
+
 export function formatDeadline(ts: number): string {
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
