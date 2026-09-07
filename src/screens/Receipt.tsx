@@ -45,7 +45,7 @@ export function Receipt() {
   if (!bounty) {
     return (
       <main className="screen">
-        <p className="text-paper">Printing receipt…</p>
+        <p className="text-muted">Printing receipt…</p>
       </main>
     )
   }
@@ -99,8 +99,8 @@ export function Receipt() {
 
   return (
     <main className="screen">
-      <Link to={`/b/${bounty.id}`} className="font-mono text-[10px] tracking-[0.18em] uppercase text-paper-2 no-underline">
-        ← Ticket
+      <Link to={`/b/${bounty.id}`} className="text-[13px] text-muted no-underline">
+        ← Bounty
       </Link>
       <article className="paper relative mt-3 overflow-hidden">
         <div className="perforation">

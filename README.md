@@ -88,8 +88,8 @@ npm run dev
 
 This starts:
 
-- Vite at `http://localhost:5173` (also on your LAN IP)
-- Cloudflare Worker + local D1 at `http://127.0.0.1:8787`
+- Vite at `http://localhost:5174` (also on your LAN IP)
+- Cloudflare Worker + local D1 at `http://127.0.0.1:8788`
 
 Vite proxies `/api` to the Worker.
 
@@ -103,11 +103,15 @@ npm run build
 Follow [Load a local Mini App](https://nimiq.dev/mini-apps/development/load-local-mini-app):
 
 1. Phone and computer on the same Wi-Fi.
-2. `npm run dev` — note the **Network** URL, e.g. `http://192.168.1.42:5173`.
+2. `npm run dev` — note the **Network** URL, e.g. `http://192.168.1.42:5174`.
 3. Nimiq Pay → Mini Apps → Custom URL → that address.
 4. Open `/probe` first. Tap **Run 3 requests**. `listAccounts()` must return a real address before anything else matters.
 
-`listAccounts()` will not return accounts in a normal desktop browser. That is expected. The provider is injected by Nimiq Pay.
+On **desktop**, Board uses [Nimiq Hub](https://nimiq.github.io/hub/) (`chooseAddress` + `checkout`) so you can connect and pay in a browser popup. You do not need Nimiq Pay for that path.
+
+Inside **Nimiq Pay**, Board still uses `@nimiq/mini-app-sdk` (`listAccounts`, `sendBasicTransactionWithData`).
+
+`listAccounts()` only exists in the Mini App WebView. Desktop Connect opens Hub instead.
 
 For testnet NIM without spending mainnet funds: in Nimiq Pay, long-press Settings for 10 seconds and switch to Testnet. The empty-state home screen has **Get free NIM**.
 

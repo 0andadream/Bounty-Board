@@ -1,4 +1,4 @@
-import type { Bounty, BountyListTab } from '@shared/types.ts'
+import type { BoardStats, Bounty, BountyListTab, BountySort, Profile } from '@shared/types.ts'
 import { AppError } from './errors.ts'
 
 const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
@@ -32,6 +32,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
             ? 'expired'
             : body.code === 'not_found'
               ? 'not_found'
+              : body.code === 'username_taken'
+                ? 'username_taken'
               : response.status >= 500
                 ? 'backend_unavailable'
                 : 'bad_request'
@@ -50,20 +52,45 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 }
 
-export async function listBounties(tab: BountyListTab): Promise<Bounty[]> {
-  const body = await request<{ bounties: Bounty[] }>(`/api/bounties?tab=${tab}`)
-  return body.bounties
+function viewerQuery(viewer?: string | null): string {
+  return viewer ? `&viewer=${encodeURIComponent(viewer)}` : ''
 }
 
-export async function listMyBounties(address: string): Promise<Bounty[]> {
+export async function listBounties(
+  tab: BountyListTab,
+  opts: { sort?: BountySort; viewer?: string | null } = {},
+): Promise<{ bounties: Bounty[]; stats: BoardStats }> {
+  const sort = opts.sort ?? 'new'
+  const body = await request<{ bounties: Bounty[]; stats: BoardStats }>(
+    `/api/bounties?tab=${tab}&sort=${sort}${viewerQuery(opts.viewer)}`,
+  )
+  return body
+}
+
+export async function listAllBounties(viewer?: string | null): Promise<Bounty[]> {
   const body = await request<{ bounties: Bounty[] }>(
-    `/api/bounties?address=${encodeURIComponent(address)}`,
+    `/api/bounties?tab=all&sort=new${viewerQuery(viewer)}`,
   )
   return body.bounties
 }
 
-export async function getBounty(id: string): Promise<Bounty> {
-  const body = await request<{ bounty: Bounty }>(`/api/bounties/${id}`)
+export async function listMyBounties(address: string, viewer?: string | null): Promise<Bounty[]> {
+  const body = await request<{ bounties: Bounty[] }>(
+    `/api/bounties?address=${encodeURIComponent(address)}${viewerQuery(viewer)}`,
+  )
+  return body.bounties
+}
+
+export async function getBounty(id: string, viewer?: string | null): Promise<Bounty> {
+  const body = await request<{ bounty: Bounty }>(`/api/bounties/${id}?x=1${viewerQuery(viewer)}`)
+  return body.bounty
+}
+
+export async function toggleLike(id: string, wallet: string): Promise<Bounty> {
+  const body = await request<{ bounty: Bounty }>(`/api/bounties/${id}/like`, {
+    method: 'POST',
+    body: JSON.stringify({ wallet }),
+  })
   return body.bounty
 }
 
@@ -74,6 +101,7 @@ export async function postBounty(input: {
   token: Bounty['token']
   deadline: number
   poster: string
+  imageUrl?: string | null
 }): Promise<Bounty> {
   const body = await request<{ bounty: Bounty }>('/api/bounties', {
     method: 'POST',
@@ -90,10 +118,46 @@ export async function claimBounty(id: string, hunter: string): Promise<Bounty> {
   return body.bounty
 }
 
-export async function submitProof(id: string, hunter: string, proof: string): Promise<Bounty> {
+export async function submitProof(
+  id: string,
+  hunter: string,
+  proof: string,
+  extra: { note?: string; image?: string | null } = {},
+): Promise<Bounty> {
   const body = await request<{ bounty: Bounty }>(`/api/bounties/${id}/submit`, {
     method: 'POST',
-    body: JSON.stringify({ hunter, proof }),
+    body: JSON.stringify({ hunter, proof, note: extra.note ?? '', image: extra.image ?? null }),
+  })
+  return body.bounty
+}
+
+export async function getProfileByWallet(wallet: string): Promise<Profile | null> {
+  const body = await request<{ profile: Profile | null }>(`/api/profiles?wallet=${encodeURIComponent(wallet)}`)
+  return body.profile
+}
+
+export async function getProfileByUsername(username: string): Promise<Profile> {
+  const body = await request<{ profile: Profile }>(`/api/profiles?username=${encodeURIComponent(username)}`)
+  if (!body.profile) throw new AppError('not_found', 'Profile not found.', false)
+  return body.profile
+}
+
+export async function saveProfile(input: {
+  wallet: string
+  username: string
+  avatarUrl?: string | null
+}): Promise<Profile> {
+  const body = await request<{ profile: Profile }>('/api/profiles', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+  return body.profile
+}
+
+export async function boostBounty(id: string, wallet: string, amountMinor: string): Promise<Bounty> {
+  const body = await request<{ bounty: Bounty }>(`/api/bounties/${id}/boost`, {
+    method: 'POST',
+    body: JSON.stringify({ wallet, amountMinor }),
   })
   return body.bounty
 }

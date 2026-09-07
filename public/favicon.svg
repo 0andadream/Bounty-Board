@@ -1,5 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="10" fill="#f3ead8"/>
-  <rect x="8" y="10" width="48" height="44" rx="3" fill="none" stroke="#c42b1c" stroke-width="3"/>
-  <text x="32" y="40" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-weight="700" fill="#c42b1c">B</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 122">
+  <rect width="92" height="122" fill="#07070a"/>
+  <defs>
+    <pattern id="h" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#07070a"/>
+      <line x1="0" y1="0" x2="8" y2="0" stroke="#d8ff3e" stroke-width="2.5"/>
+    </pattern>
+    <clipPath id="c">
+      <path d="M18 12 H60 L72 24 V46 L66 52 L74 58 V90 L60 106 H18 Z M36 26 H56 L58 28 V44 L56 46 H36 Z M36 64 H56 L60 68 V88 L56 92 H36 Z" fill-rule="evenodd"/>
+    </clipPath>
+  </defs>
+  <g transform="translate(8 2) skewX(-8)">
+    <rect x="28" y="0" width="16" height="12" fill="#d8ff3e"/>
+    <rect x="28" y="106" width="16" height="12" fill="#d8ff3e"/>
+    <rect width="90" height="120" fill="url(#h)" clip-path="url(#c)"/>
+    <path d="M18 12 H60 L72 24 V46 L66 52 L74 58 V90 L60 106 H18 Z" fill="none" stroke="#d8ff3e" stroke-width="6.4"/>
+    <path d="M18 12 H60 L72 24 V46 L66 52 L74 58 V90 L60 106 H18 Z" fill="none" stroke="#07070a" stroke-width="3.6"/>
+    <path d="M18 12 H60 L72 24 V46 L66 52 L74 58 V90 L60 106 H18 Z" fill="none" stroke="#d8ff3e" stroke-width="1.6"/>
+    <path d="M36 26 H56 L58 28 V44 L56 46 H36 Z M36 64 H56 L60 68 V88 L56 92 H36 Z" fill="#07070a" fill-rule="evenodd"/>
+    <path d="M36 26 H56 L58 28 V44 L56 46 H36 Z M36 64 H56 L60 68 V88 L56 92 H36 Z" fill="none" fill-rule="evenodd" stroke="#d8ff3e" stroke-width="2.2"/>
+    <text x="74" y="30" fill="#d8ff3e" font-family="Impact, sans-serif" font-size="18" font-weight="700">$</text>
+  </g>
 </svg>

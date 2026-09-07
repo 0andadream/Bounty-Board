@@ -21,6 +21,10 @@ export function hostLanguage(): string {
   return getHostLanguage() ?? navigator.language.split('-')[0] ?? 'en'
 }
 
+export function shouldUseMiniApp(): boolean {
+  return Boolean(window.nimiq || window.nimiqPay)
+}
+
 export async function getNimiqProvider(): Promise<NimiqProvider> {
   if (!providerPromise) {
     providerPromise = init({ timeout: 10_000 })
@@ -67,7 +71,7 @@ function extractTxHash(result: unknown): string | null {
   return null
 }
 
-export async function sendBountyPayment(input: {
+export async function sendMiniAppPayment(input: {
   recipient: string
   valueLuna: number
   bountyId: string

@@ -69,3 +69,11 @@ export function isValidWallet(token: 'NIM' | 'USDT', input: string): boolean {
 export function shortenWallet(token: 'NIM' | 'USDT', input: string): string {
   return token === 'NIM' ? shortenNimiqAddress(input) : shortenEthAddress(input)
 }
+
+export function likeWalletKey(input: string): string {
+  return input.replace(/\s+/g, '').toLowerCase()
+}
+
+export function isLikeWallet(input: string): boolean {
+  return isValidNimiqAddress(input) || isValidEthAddress(input)
+}

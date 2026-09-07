@@ -10,9 +10,9 @@
     "url": "https://github.com/0andadream/Bounty-Board.git"
   },
   "scripts": {
-    "dev": "concurrently -n web,api -c cyan,magenta \"vite\" \"wrangler dev --port 8787\"",
+    "dev": "concurrently -n web,api -c cyan,magenta \"vite\" \"wrangler dev --port 8788\"",
     "dev:web": "vite",
-    "dev:api": "wrangler dev --port 8787",
+    "dev:api": "wrangler dev --port 8788",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host",
     "test": "tsx --test shared/machine.test.ts",
@@ -21,6 +21,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply board --remote"
   },
   "dependencies": {
+    "@nimiq/hub-api": "^1.15.0",
     "@nimiq/mini-app-sdk": "^0.1.0",
     "hono": "^4.13.5",
     "react": "^19.2.8",

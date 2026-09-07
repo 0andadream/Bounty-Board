@@ -54,8 +54,8 @@ export function canSubmit(
   if (!bounty.hunter || !sameAddress(bounty.hunter, hunter)) {
     return fail('not_hunter', 'Only the hunter who claimed this bounty can submit proof.')
   }
-  if (!isHttpUrl(proof)) {
-    return fail('bad_proof', 'Proof must be an http or https link.')
+  if (!isProofValue(proof)) {
+    return fail('bad_proof', 'Add a link or a photo of your work.')
   }
   return ok
 }
@@ -110,6 +110,14 @@ export function isHttpUrl(value: string): boolean {
   } catch {
     return false
   }
+}
+
+export function isProofValue(value: string): boolean {
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  if (/^data:image\/(jpeg|jpg|png|webp);base64,/i.test(trimmed)) return true
+  const parts = trimmed.split('\n').map((part) => part.trim()).filter(Boolean)
+  return parts.length > 0 && parts.every(isHttpUrl)
 }
 
 export function nextStoredStatus(from: StoredStatus, event: 'claim' | 'submit' | 'pay'): StoredStatus | null {

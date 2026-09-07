@@ -10,6 +10,7 @@ export type AppErrorCode =
   | 'already_claimed'
   | 'expired'
   | 'not_found'
+  | 'username_taken'
   | 'bad_request'
   | 'unknown'
 
@@ -55,7 +56,7 @@ export function classifyWalletError(error: unknown): AppError {
   if (/timeout|timed out|not detected|not running|inject/.test(lower)) {
     return new AppError(
       'wallet_unavailable',
-      'Nimiq Pay wallet is not available. Open Board inside Nimiq Pay.',
+      'Nimiq wallet is not available. Connect with Nimiq Hub, or open Board inside Nimiq Pay.',
       true,
     )
   }

@@ -1,19 +1,37 @@
-import type { BountyListTab } from '@shared/types.ts'
+import type { BoardStats, Bounty, BountyListTab, BountySort } from '@shared/types.ts'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Banner, BountyCard, EmptyTicket, ErrorNote } from '../components/ui.tsx'
+import { Link, useSearchParams } from 'react-router-dom'
+import { PostBountyModal } from '../components/PostBountyModal.tsx'
+import { ActivityRail, BountyCard, EmptyTicket, ErrorNote, FeedHead } from '../components/ui.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
-import { listBounties } from '../lib/api.ts'
+import { listAllBounties, listBounties, toggleLike } from '../lib/api.ts'
 import { toErrorMessage } from '../lib/errors.ts'
-import { shortWallet } from '../lib/format.ts'
-import type { Bounty } from '@shared/types.ts'
+import { activitiesFromBounties } from '../lib/format.ts'
 
-const TABS: BountyListTab[] = ['open', 'claimed', 'paid']
+const TABS: Array<{ id: BountyListTab; label: string }> = [
+  { id: 'open', label: 'Open' },
+  { id: 'claimed', label: 'In review' },
+  { id: 'paid', label: 'Paid' },
+]
+
+const SORTS: Array<{ id: BountySort; label: string }> = [
+  { id: 'reward', label: 'Highest value' },
+  { id: 'new', label: 'Newest' },
+  { id: 'ending', label: 'Ending soon' },
+]
+
+const EMPTY_STATS: BoardStats = { live: 0, review: 0, paid: 0, likes: 0 }
 
 export function BoardScreen() {
   const wallet = useWallet()
+  const [params, setParams] = useSearchParams()
+  const createOpen = params.get('create') === '1'
+  const viewer = wallet.nimiqAddress ?? wallet.ethAddress
   const [tab, setTab] = useState<BountyListTab>('open')
+  const [sort, setSort] = useState<BountySort>('reward')
   const [bounties, setBounties] = useState<Bounty[]>([])
+  const [tape, setTape] = useState<Bounty[]>([])
+  const [stats, setStats] = useState<BoardStats>(EMPTY_STATS)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const now = Date.now()
@@ -22,9 +40,12 @@ export function BoardScreen() {
     let ignore = false
     setLoading(true)
     setError(null)
-    listBounties(tab)
-      .then((rows) => {
-        if (!ignore) setBounties(rows)
+    Promise.all([listBounties(tab, { sort, viewer }), listAllBounties(viewer)])
+      .then(([feed, all]) => {
+        if (ignore) return
+        setBounties(feed.bounties)
+        setStats(feed.stats)
+        setTape(all)
       })
       .catch((err) => {
         if (!ignore) setError(toErrorMessage(err))
@@ -35,64 +56,114 @@ export function BoardScreen() {
     return () => {
       ignore = true
     }
-  }, [tab])
+  }, [tab, sort, viewer])
+
+  async function onLike(bounty: Bounty) {
+    try {
+      const walletId = wallet.nimiqAddress ?? wallet.ethAddress ?? (await wallet.connect())
+      const next = await toggleLike(bounty.id, walletId)
+      setBounties((current) => current.map((row) => (row.id === next.id ? next : row)))
+      setTape((current) => current.map((row) => (row.id === next.id ? next : row)))
+      setStats((current) => ({
+        ...current,
+        likes: current.likes + (next.liked ? 1 : -1),
+      }))
+    } catch (err) {
+      setError(toErrorMessage(err))
+    }
+  }
+
+  const activities = activitiesFromBounties(tape)
 
   return (
-    <main className="screen">
-      <header className="mb-5 flex items-end justify-between">
-        <div>
-          <p className="m-0 font-mono text-[10px] tracking-[0.28em] uppercase text-paper-2">
-            Nimiq Pay Mini App
-          </p>
-          <h1 className="mt-1 mb-0 text-[34px] leading-none text-paper">Board</h1>
+    <main className="board-page">
+      <div className="board-main">
+      <div className="flex items-end justify-between gap-4 mb-4 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="mt-0 mb-1 text-[34px] tracking-[-0.05em]">Bounties</h1>
+          <p className="m-0 text-[14px] text-muted">Search and filter open bounties</p>
         </div>
-        <Link to="/probe" className="font-mono text-[10px] tracking-[0.16em] uppercase text-paper-2 no-underline">
-          Probe
+        <Link to="/?create=1" className="btn-accent no-underline">
+          Post bounty
         </Link>
-      </header>
+      </div>
 
-      {wallet.status === 'connecting' ? (
-        <Banner>Waiting for Nimiq Pay to initialize the provider…</Banner>
-      ) : wallet.status === 'connected' && wallet.nimiqAddress ? (
-        <Banner>
-          Connected {shortWallet('NIM', wallet.nimiqAddress)}
-          {wallet.consensus != null ? ` · consensus ${wallet.consensus ? 'yes' : 'no'}` : ''}
-        </Banner>
+      <div className="stats">
+        <div>
+          <strong>{stats.live}</strong>
+          live
+        </div>
+        <div>
+          <strong>{stats.review}</strong>
+          in review
+        </div>
+        <div>
+          <strong>{stats.paid}</strong>
+          paid out
+        </div>
+        <div>
+          <strong>{stats.likes}</strong>
+          likes
+        </div>
+      </div>
+
+      <div className="toolbar">
+        <label className="select-wrap">
+          <span className="sr-only">Sort</span>
+          <select
+            className="select"
+            value={sort}
+            onChange={(event) => setSort(event.target.value as BountySort)}
+          >
+            {SORTS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="select-wrap">
+          <span className="sr-only">Status</span>
+          <select
+            className="select"
+            value={tab}
+            onChange={(event) => setTab(event.target.value as BountyListTab)}
+          >
+            {TABS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {loading ? (
+        <EmptyTicket>Loading bounties…</EmptyTicket>
+      ) : error ? (
+        <ErrorNote message={error} />
+      ) : bounties.length === 0 ? (
+        <EmptyTicket>
+          {tab === 'open' ? 'Nothing open yet. Post the first bounty.' : `No ${tab} bounties.`}
+        </EmptyTicket>
       ) : (
-        <Banner>
-          Open Board inside Nimiq Pay to post, claim, and pay. You can still read the board from a
-          browser.{' '}
-          <button type="button" className="underline bg-transparent border-0 p-0 text-inherit" onClick={() => void wallet.connect().catch(() => undefined)}>
-            Retry wallet
-          </button>
-        </Banner>
-      )}
-
-      <div className="paper px-4 pt-2 pb-4">
-        <div className="mb-3 flex gap-5">
-          {TABS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`tab ${tab === item ? 'active' : ''}`}
-              onClick={() => setTab(item)}
-            >
-              {item}
-            </button>
+        <div className="feed">
+          <FeedHead />
+          {bounties.map((bounty) => (
+            <BountyCard key={bounty.id} bounty={bounty} now={now} onLike={onLike} />
           ))}
         </div>
-        {loading ? (
-          <EmptyTicket>Pulling tickets…</EmptyTicket>
-        ) : error ? (
-          <ErrorNote message={error} />
-        ) : bounties.length === 0 ? (
-          <EmptyTicket>
-            {tab === 'open' ? 'Nothing posted. Pin a bounty.' : `No ${tab} bounties.`}
-          </EmptyTicket>
-        ) : (
-          bounties.map((bounty) => <BountyCard key={bounty.id} bounty={bounty} now={now} />)
-        )}
+      )}
       </div>
+      <ActivityRail items={activities} now={now} />
+      <PostBountyModal
+        open={createOpen}
+        onClose={() => {
+          const next = new URLSearchParams(params)
+          next.delete('create')
+          setParams(next, { replace: true })
+        }}
+      />
     </main>
   )
 }
