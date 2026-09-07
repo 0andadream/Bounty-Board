@@ -137,14 +137,18 @@ npx wrangler login
 npx wrangler d1 create board
 ```
 
-Put the database id in `wrangler.toml`, then:
+Put the database id in `wrangler.toml` (already set for this account). Then:
 
 ```bash
 npm run db:migrate:remote
-npx wrangler deploy
+npm run deploy
 ```
 
-Host the Vite `dist/` build on Cloudflare Pages, Workers static assets, or any HTTPS host. Point `VITE_API_URL` at the Worker if they are on different origins.
+That ships the Worker, D1, and the Vite `dist/` as static assets on the same origin. `/api` hits the Worker; everything else is the Mini App.
+
+If you deploy from the Cloudflare Git dashboard, set **Build command** to `npm run build` so `./dist` exists before Wrangler uploads assets. Leave `VITE_API_URL` empty when UI and API share that origin.
+
+Live: https://bounty-board.mattt-dreamer.workers.dev
 
 Share the Mini App with:
 

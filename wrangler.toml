@@ -1,13 +1,20 @@
-name = "board"
+name = "bounty-board"
 main = "worker/index.ts"
 compatibility_date = "2025-10-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
 
 [vars]
 APP_NAME = "Board"
 
+# Cloudflare dashboard: set Build command to `npm run build` so ./dist exists.
 [[d1_databases]]
 binding = "DB"
 database_name = "board"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "3cf0b7ac-6c98-4e21-9b63-3ca34e49d50e"
 migrations_dir = "worker/migrations"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
