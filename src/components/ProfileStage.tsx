@@ -175,9 +175,9 @@ export function ProfileStage({
               ))}
             </div>
           )}
-          <h2 className="profile-section-title">Claimed</h2>
+          <h2 className="profile-section-title">Submitted</h2>
           {claimed.length === 0 ? (
-            <EmptyTicket>No claimed bounties.</EmptyTicket>
+            <EmptyTicket>No submissions yet.</EmptyTicket>
           ) : (
             <div className="feed">
               <FeedHead />

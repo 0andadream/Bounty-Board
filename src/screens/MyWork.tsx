@@ -139,11 +139,11 @@ export function MyWork() {
 
       {addresses.length === 0 ? (
         <Banner>
-          Connect a wallet to see bounties you posted or claimed.{' '}
+          Connect a wallet to see bounties you posted or submitted.{' '}
           <button
             type="button"
             className="underline bg-transparent border-0 p-0 text-inherit"
-            onClick={() => void wallet.connect().catch(() => undefined)}
+            onClick={() => void wallet.connect().catch((err) => setError(toErrorMessage(err)))}
           >
             Connect wallet
           </button>

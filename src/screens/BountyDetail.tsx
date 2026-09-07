@@ -34,6 +34,7 @@ export function BountyDetail() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [now, setNow] = useState(Date.now())
+  const [reload, setReload] = useState(0)
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000)
@@ -42,6 +43,7 @@ export function BountyDetail() {
 
   useEffect(() => {
     let ignore = false
+    setError(null)
     getBounty(id, wallet.nimiqAddress ?? wallet.ethAddress)
       .then((row) => {
         if (!ignore) setBounty(row)
@@ -52,13 +54,21 @@ export function BountyDetail() {
     return () => {
       ignore = true
     }
-  }, [id, wallet.nimiqAddress, wallet.ethAddress])
+  }, [id, wallet.nimiqAddress, wallet.ethAddress, reload])
 
   if (!bounty && error) {
     return (
       <main className="screen">
         <BackKey />
         <ErrorNote message={error} />
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button type="button" className="btn-accent" onClick={() => setReload((n) => n + 1)}>
+            Retry
+          </button>
+          <Link to="/bounties" className="btn-ghost inline-block no-underline">
+            Open board
+          </Link>
+        </div>
       </main>
     )
   }
@@ -78,7 +88,10 @@ export function BountyDetail() {
   const isPoster = Boolean(myAddress && sameAddress(myAddress, ticket.poster))
   const isHunter = Boolean(myAddress && ticket.hunter && sameAddress(myAddress, ticket.hunter))
   const alreadySubmitted = ticket.status === 'submitted' || ticket.status === 'paid'
-  const showSubmit = status !== 'expired' && !alreadySubmitted
+  const showSubmit =
+    status !== 'expired' && !alreadySubmitted && !isPoster && (ticket.status === 'open' || isHunter)
+  const needsPosterWallet = ticket.status === 'submitted' && !isPoster && !isHunter
+  const posterWalletConnected = Boolean(myAddress)
   const canPayNow = ticket.status === 'submitted' && isPoster
   const canBoost = status !== 'paid' && status !== 'expired'
   const hasEntry = Boolean(ticket.proof || ticket.proofNote || ticket.proofImage)
@@ -213,7 +226,7 @@ export function BountyDetail() {
         {hasEntry && (ticket.status === 'submitted' || ticket.status === 'paid') ? (
           <section className="entry-card">
             <h2 className="mt-0 mb-1 text-[22px] tracking-[-0.04em]">
-              {isPoster ? 'Entry for review' : 'Your entry'}
+              {isPoster ? 'Entry for review' : isHunter ? 'Your entry' : 'Submitted work'}
             </h2>
             {ticket.hunter ? (
               <div className="mb-3">
@@ -316,11 +329,33 @@ export function BountyDetail() {
         ) : null}
 
         {ticket.status === 'claimed' && !isHunter && !isPoster ? (
-          <p className="mt-4 mb-0 text-[13px] text-muted">Someone already claimed this. Boost the pool while they work.</p>
+          <p className="mt-4 mb-0 text-[13px] text-muted">Someone already has this in review. Boost the pool while they work.</p>
         ) : null}
 
-        {ticket.status === 'submitted' && !isPoster ? (
-          <p className="mt-4 mb-0 text-[13px] text-muted">Your link is in for review. Waiting on the poster to pay.</p>
+        {ticket.status === 'submitted' && isHunter && !isPoster ? (
+          <p className="mt-4 mb-0 text-[13px] text-muted">Your work is in for review. Waiting on the poster to pay.</p>
+        ) : null}
+
+        {needsPosterWallet ? (
+          <div className="mt-4">
+            <p className="mt-0 mb-3 text-[13px] text-muted">
+              {posterWalletConnected
+                ? 'This wallet did not post this bounty. Connect the poster wallet to pay. The bounty stays submitted until a tx hash comes back.'
+                : 'Connect the poster wallet to pay the hunter. The bounty stays submitted until a tx hash comes back.'}
+            </p>
+            <button
+              type="button"
+              className="btn-accent w-full py-3"
+              onClick={() => {
+                setError(null)
+                void (ticket.token === 'USDT' ? wallet.connectEthereum() : wallet.connect()).catch((err) =>
+                  setError(toErrorMessage(err)),
+                )
+              }}
+            >
+              Connect to pay
+            </button>
+          </div>
         ) : null}
 
         {canPayNow ? (

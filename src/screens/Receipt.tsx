@@ -20,9 +20,11 @@ export function Receipt() {
   const [bounty, setBounty] = useState<Bounty | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [reload, setReload] = useState(0)
 
   useEffect(() => {
     let ignore = false
+    setError(null)
     getBounty(id)
       .then((row) => {
         if (!ignore) setBounty(row)
@@ -33,13 +35,21 @@ export function Receipt() {
     return () => {
       ignore = true
     }
-  }, [id])
+  }, [id, reload])
 
   if (error) {
     return (
       <main className="screen">
         <BackKey />
         <ErrorNote message={error} />
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button type="button" className="btn-accent" onClick={() => setReload((n) => n + 1)}>
+            Retry
+          </button>
+          <Link to="/bounties" className="btn-ghost inline-block no-underline">
+            Open board
+          </Link>
+        </div>
       </main>
     )
   }

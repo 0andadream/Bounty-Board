@@ -1,6 +1,6 @@
 import type { BoardStats, Bounty, BountyListTab, BountySort } from '@shared/types.ts'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { PostBountyModal } from '../components/PostBountyModal.tsx'
 import { SideRail } from '../components/SideRail.tsx'
 import { BountyCard, EmptyTicket, ErrorNote, FeedHead } from '../components/ui.tsx'
@@ -34,6 +34,7 @@ export function BoardScreen() {
   const [stats, setStats] = useState<BoardStats>(EMPTY_STATS)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [reload, setReload] = useState(0)
   const now = Date.now()
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export function BoardScreen() {
     return () => {
       ignore = true
     }
-  }, [tab, sort, viewer])
+  }, [tab, sort, viewer, reload])
 
   async function onLike(bounty: Bounty) {
     try {
@@ -143,10 +144,24 @@ export function BoardScreen() {
       {loading ? (
         <EmptyTicket>Loading bounties…</EmptyTicket>
       ) : error ? (
-        <ErrorNote message={error} />
+        <div>
+          <ErrorNote message={error} />
+          <button type="button" className="btn-ghost mt-3" onClick={() => setReload((n) => n + 1)}>
+            Retry
+          </button>
+        </div>
       ) : bounties.length === 0 ? (
         <EmptyTicket>
-          {tab === 'open' ? 'Nothing open yet. Post the first bounty.' : `No ${tab} bounties.`}
+          {tab === 'open' ? (
+            <>
+              Nothing open yet.{' '}
+              <Link to="/bounties?create=1" className="text-inherit">
+                Create the first bounty
+              </Link>
+            </>
+          ) : (
+            `No ${tab === 'claimed' ? 'submissions' : tab} yet.`
+          )}
         </EmptyTicket>
       ) : (
         <div className="feed">
@@ -165,6 +180,9 @@ export function BoardScreen() {
           setSort('reward')
         }}
       />
+      <Link to="/bounties?create=1" className="create-dock">
+        <span aria-hidden="true">+</span> Create bounty
+      </Link>
       <PostBountyModal
         open={createOpen}
         onClose={() => {

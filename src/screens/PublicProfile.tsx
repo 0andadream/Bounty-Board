@@ -1,7 +1,7 @@
 import { sameAddress } from '@shared/address.ts'
 import type { Bounty, Profile } from '@shared/types.ts'
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { BackKey } from '../components/BackKey.tsx'
 import { completedCount, earnedLabel, ProfileStage, type ProfileTab } from '../components/ProfileStage.tsx'
 import { EmptyTicket, ErrorNote } from '../components/ui.tsx'
@@ -57,6 +57,9 @@ export function PublicProfile() {
       <main className="screen profile-page">
         <BackKey />
         <ErrorNote message={error ?? 'Profile not found.'} />
+        <Link to="/bounties" className="btn-ghost mt-4 inline-block no-underline">
+          Open board
+        </Link>
       </main>
     )
   }

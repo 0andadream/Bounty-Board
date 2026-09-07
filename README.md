@@ -2,7 +2,7 @@
 
 **Post a task. Pay wallet to wallet. Keep the receipt.**
 
-Board is a bounty board that runs as a [Nimiq Pay Mini App](https://nimiq.dev/mini-apps/). Someone posts a task and a reward in **NIM** or **USDT on Polygon**. One hunter claims it, submits a proof link, and the poster pays them directly from their wallet. There is no escrow, no dispute court, and no bidding.
+Board is a bounty board that runs as a [Nimiq Pay Mini App](https://nimiq.dev/mini-apps/). Someone posts a task and a reward in **NIM** or **USDT on Polygon**. One hunter submits proof, and the poster pays them directly from their wallet. There is no escrow, no dispute court, and no bidding.
 
 The receipt — poster, hunter, task, amount, tx hash — is the product. It is meant to be screenshotted and shared.
 
@@ -10,19 +10,18 @@ Built for the [Nimiq Mini Apps Competition](https://miniappscompetition.com/).
 
 ## Why it exists
 
-Most bounty boards either custody funds or live in a chat thread with no proof of payment. Board does neither. Nimiq Pay already holds the keys. Board holds the ticket: who posted, who claimed, what was promised, and the hash that proves the poster paid.
+Most bounty boards either custody funds or live in a chat thread with no proof of payment. Board does neither. Nimiq Pay already holds the keys. Board holds the ticket: who posted, who submitted, what was promised, and the hash that proves the poster paid.
 
 ## Core user flow
 
-1. Open Board inside Nimiq Pay.
+1. Open Board inside Nimiq Pay. The Mini App lands on the board, not the marketing page.
 2. Wallet connects via `listAccounts()` (native confirmation).
-3. Poster writes a title, brief, reward, token, and deadline.
-4. Hunter claims. The write is atomic — two taps cannot both win.
-5. Hunter submits an `https` proof link.
-6. Poster taps **Pay**. Nimiq Pay shows the native confirmation.
-7. NIM payments attach memo `BOUNTY:<id>:PAID`. USDT payments go to Polygon USDT.
-8. Board records paid **only** after the wallet returns a transaction hash.
-9. Receipt screen: paid stamp, both wallets, hash, timestamp, share.
+3. Poster writes a title, summary, deliverables, reward, token, and duration.
+4. A hunter taps **Submit work** and sends proof (links and notes).
+5. Poster reviews the entry, then taps **Pay**. Nimiq Pay shows the native confirmation.
+6. NIM payments attach memo `BOUNTY:<id>:PAID`. USDT payments go to Polygon USDT.
+7. Board records paid **only** after the wallet returns a transaction hash.
+8. Receipt screen: paid stamp, both wallets, hash, timestamp, share.
 
 If the wallet rejects, the network fails, or no hash comes back, the bounty stays submitted. Retry is available.
 
@@ -68,11 +67,14 @@ USDT uses standard EIP-1193 `window.ethereum` calls (`eth_requestAccounts`, `wal
 
 | Route | Screen |
 |---|---|
-| `/` | Board — open / claimed / paid tabs |
-| `/new` | New bounty |
-| `/b/:id` | Bounty detail — timeline, claim, proof, Pay (gated on poster wallet) |
-| `/mine` | My work — posted + claimed |
-| `/b/:id/receipt` | Receipt — paid stamp, perforation, share |
+| `/` | Landing (web). Inside Nimiq Pay this redirects to `/bounties`. |
+| `/bounties` | Board — feed, create modal, highest-reward rail |
+| `/bounties?create=1` | Opens **Create bounty** |
+| `/b/:id` | Bounty detail — brief, submit work, Pay (poster wallet) |
+| `/mine` | Mine — my bounties and my submissions |
+| `/profile` | Profile setup |
+| `/u/:username` | Public profile |
+| `/b/:id/receipt` | Receipt — paid stamp, hash, share |
 | `/probe` | Official 3-request provider check |
 
 ## Local development
@@ -157,10 +159,12 @@ Stored statuses: `open → claimed → submitted → paid`.
 
 `expired` is a **view** status when `now > deadline` and the bounty is not paid. The row is not mutated back to open. The poster posts a new ticket.
 
+**Submit work** is one action in the UI: it claims first-come, then writes the proof. `claimed` is the in-review hold if the proof write fails after claim.
+
 Rules in `shared/machine.ts` (no I/O):
 
 - One hunter. Claim is an atomic SQL `UPDATE … WHERE status = 'open' AND hunter IS NULL`.
-- Only the hunter who claimed can submit a proof URL.
+- Only that hunter can submit proof.
 - Only the poster can mark paid, and only after proof + a real tx hash.
 - Pay is not recorded if the wallet rejects or returns no hash.
 
@@ -168,8 +172,8 @@ Rules in `shared/machine.ts` (no I/O):
 
 - No escrow. Pay-on-approve is the entire Mini App payment surface.
 - USDT transfers cannot attach `BOUNTY:<id>:PAID`. NIM transfers can.
-- Proof is a URL, not a file upload.
-- Desktop browser can read the board but cannot `listAccounts()` unless Nimiq Pay injects the provider.
+- Proof is a URL (plus an optional photo). Videos and PDFs go behind a link.
+- Inside Nimiq Pay, accounts come from `listAccounts()`. On desktop, Connect opens Nimiq Hub.
 
 ## License
 

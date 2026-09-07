@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Board — a bounty board Mini App for Nimiq Pay. Post a task, lock a reward, pay wallet to wallet.",
+  "description": "Board — a bounty board Mini App for Nimiq Pay. Post a task, pay wallet to wallet, keep the receipt.",
   "license": "MIT",
   "repository": {
     "type": "git",

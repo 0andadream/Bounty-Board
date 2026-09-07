@@ -1,7 +1,9 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { Shell } from './components/Shell.tsx'
 import { ProfileProvider } from './context/ProfileContext.tsx'
 import { WalletProvider } from './context/WalletContext.tsx'
+import { shouldUseMiniApp } from './providers/nimiq.ts'
 import { BoardScreen } from './screens/Board.tsx'
 import { BountyDetail } from './screens/BountyDetail.tsx'
 import { Landing } from './screens/Landing.tsx'
@@ -11,13 +13,31 @@ import { ProfileScreen } from './screens/Profile.tsx'
 import { PublicProfile } from './screens/PublicProfile.tsx'
 import { Receipt } from './screens/Receipt.tsx'
 
+function RootRoute() {
+  const navigate = useNavigate()
+  const [inPay, setInPay] = useState(() => shouldUseMiniApp())
+
+  useEffect(() => {
+    if (!shouldUseMiniApp()) return
+    setInPay(true)
+    navigate('/bounties', { replace: true })
+  }, [navigate])
+
+  if (inPay) return <Navigate to="/bounties" replace />
+  return <Landing />
+}
+
+function FallbackRoute() {
+  return <Navigate to={shouldUseMiniApp() ? '/bounties' : '/'} replace />
+}
+
 export default function App() {
   return (
     <WalletProvider>
       <ProfileProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<RootRoute />} />
             <Route element={<Shell />}>
               <Route path="/bounties" element={<BoardScreen />} />
               <Route path="/new" element={<Navigate to="/bounties?create=1" replace />} />
@@ -27,7 +47,7 @@ export default function App() {
               <Route path="/b/:id" element={<BountyDetail />} />
               <Route path="/b/:id/receipt" element={<Receipt />} />
               <Route path="/probe" element={<Probe />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<FallbackRoute />} />
             </Route>
           </Routes>
         </BrowserRouter>
