@@ -95,7 +95,20 @@ export function SubmitModal({
       return
     }
     const cleanLinks = links.map((link) => link.trim()).filter(Boolean)
-    if (cleanLinks.length === 0 && files.length === 0) {
+    const needed = bounty.proofType ?? 'any'
+    if (needed === 'url' && cleanLinks.length === 0) {
+      setError('This bounty needs a proof URL.')
+      return
+    }
+    if (needed === 'image' && files.length === 0) {
+      setError('This bounty needs a proof photo.')
+      return
+    }
+    if (needed === 'text' && !description.trim()) {
+      setError('This bounty needs a written note.')
+      return
+    }
+    if (needed === 'any' && cleanLinks.length === 0 && files.length === 0) {
       setError('Add a link or attach a photo so the poster can review the work.')
       return
     }
@@ -110,7 +123,7 @@ export function SubmitModal({
         return
       }
       if (bounty.hunter && !sameAddress(hunter, bounty.hunter)) {
-        setError('Someone already claimed this bounty.')
+        setError('Someone already claimed this bounty. Only that hunter can submit.')
         return
       }
       if (bounty.status === 'open') {
@@ -146,6 +159,8 @@ export function SubmitModal({
         <p className="mt-0 mb-1 text-[16px]">{bounty.title}</p>
         <p className="mt-0 mb-4 text-[13px] text-muted">
           Describe your submission. Add links or attachments to back it up.
+          {bounty.hunter ? ` Hunter wallet: ${bounty.hunter}.` : ''}
+          {bounty.proofType && bounty.proofType !== 'any' ? ` Proof type: ${bounty.proofType}.` : ''}
         </p>
 
         <div className="deliverable-box">

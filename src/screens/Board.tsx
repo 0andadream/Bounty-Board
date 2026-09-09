@@ -84,24 +84,33 @@ export function BoardScreen() {
         </div>
       </div>
 
-      <div className="stats">
-        <div>
-          <strong>{stats.live}</strong>
-          live
+      {stats.live === 0 && stats.review === 0 && stats.paid === 0 && !loading ? (
+        <div className="panel text-center mb-4">
+          <p className="mt-0 mb-3 text-[15px] text-muted">The board is empty.</p>
+          <Link to="/bounties?create=1" className="btn-accent no-underline">
+            Post the first bounty — 2 min
+          </Link>
         </div>
-        <div>
-          <strong>{stats.review}</strong>
-          in review
+      ) : (
+        <div className="stats">
+          <div>
+            <strong>{stats.live}</strong>
+            live
+          </div>
+          <div>
+            <strong>{stats.review}</strong>
+            in review
+          </div>
+          <div>
+            <strong>{stats.paid}</strong>
+            paid out
+          </div>
+          <div>
+            <strong>{stats.likes}</strong>
+            likes
+          </div>
         </div>
-        <div>
-          <strong>{stats.paid}</strong>
-          paid out
-        </div>
-        <div>
-          <strong>{stats.likes}</strong>
-          likes
-        </div>
-      </div>
+      )}
 
       <div className="toolbar">
         <label className="select-wrap">
@@ -156,7 +165,7 @@ export function BoardScreen() {
             <>
               Nothing open yet.{' '}
               <Link to="/bounties?create=1" className="text-inherit">
-                Create the first bounty
+                Post the first bounty — 2 min
               </Link>
             </>
           ) : (

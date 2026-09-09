@@ -40,6 +40,7 @@ export default function App() {
             <Route path="/" element={<RootRoute />} />
             <Route element={<Shell />}>
               <Route path="/bounties" element={<BoardScreen />} />
+              <Route path="/board" element={<Navigate to="/bounties" replace />} />
               <Route path="/new" element={<Navigate to="/bounties?create=1" replace />} />
               <Route path="/mine" element={<MyWork />} />
               <Route path="/profile" element={<ProfileScreen />} />

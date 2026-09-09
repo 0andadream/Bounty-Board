@@ -128,6 +128,13 @@ export function Receipt() {
           </div>
           <h1 className="mt-5 mb-1 text-[22px] leading-tight">{bounty.title}</h1>
           <p className="mt-3 mb-0 money text-[32px]">{money(bounty.rewardMinor, bounty.token)}</p>
+          <p className="mt-1 mb-0 font-mono text-[12px] text-muted">Asset {bounty.token}</p>
+          <ol className="receipt-steps">
+            <li className="on">Created</li>
+            <li className={bounty.claimedAt ? 'on' : ''}>Claimed</li>
+            <li className={bounty.submittedAt ? 'on' : ''}>Submitted</li>
+            <li className="on">Paid (tx hash)</li>
+          </ol>
           <hr className="rule my-5" />
           <p className="m-0 font-mono text-[10px] tracking-[0.18em] uppercase text-muted">Poster</p>
           <p className="addr mt-1 mb-4">{formatWallet(bounty.token, bounty.poster)}</p>

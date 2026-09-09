@@ -15,7 +15,7 @@
     "dev:api": "wrangler dev --port 8788",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host",
-    "test": "tsx --test shared/machine.test.ts",
+    "test": "tsx --test shared/machine.test.ts shared/trust.test.ts",
     "deploy": "npm run build && wrangler deploy",
     "db:migrate": "wrangler d1 migrations apply board --local",
     "db:migrate:remote": "wrangler d1 migrations apply board --remote"

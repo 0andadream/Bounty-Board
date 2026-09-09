@@ -2263,6 +2263,22 @@ a {
     gap: 8px;
   }
 
+  .bounty-title {
+    font-size: 26px;
+    overflow-wrap: anywhere;
+  }
+
+  .pool-card,
+  .post-modal,
+  .submit-modal,
+  .paper {
+    max-width: 100%;
+  }
+
+  .create-dock {
+    min-height: 48px;
+  }
+
   .top-links {
     display: none;
   }
@@ -2469,6 +2485,13 @@ a {
   font-size: 18px;
   line-height: 1.5;
   color: #9a9a92;
+}
+
+.land-sub {
+  max-width: 560px;
+  margin: 10px auto 0;
+  font-size: 14px;
+  color: #d8ff3e;
 }
 
 .land-cta {
@@ -2684,6 +2707,80 @@ a {
   margin: 0;
   color: #9a9a92;
   font-size: 13px;
+}
+
+.demo-pill,
+.await-pill {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.demo-pill {
+  background: #d8ff3e;
+  color: #07070a;
+}
+
+.await-pill {
+  margin: 4px 0 0;
+  background: #ffffff14;
+  color: #fdba74;
+}
+
+.trust-mini {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #9a9a92;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.receipt-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5c5c56;
+}
+
+.receipt-steps li.on {
+  color: #d8ff3e;
+}
+
+.site-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 20px 40px;
+  border-top: 1px solid #ffffff14;
+  color: #9a9a92;
+  font-size: 13px;
+}
+
+.site-foot p,
+.site-foot-deep {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.site-foot a {
+  color: inherit;
+}
+
+.paper .addr {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 @keyframes land-marquee {

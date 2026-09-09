@@ -1,4 +1,5 @@
 import { viewStatus } from '@shared/machine.ts'
+import { awaitingPay, posterPaidLabel } from '@shared/trust.ts'
 import type { Bounty, Profile, ViewStatus } from '@shared/types.ts'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
@@ -147,8 +148,13 @@ export function BountyCard({
           <Stamp status={status} ending={soon} />
         </div>
         <div className="col-bounty">
-          <h2 className="line-clamp-2">{bounty.title}</h2>
+          <h2 className="line-clamp-2">
+            {bounty.demo ? <span className="demo-pill">Demo</span> : null}
+            {bounty.title}
+          </h2>
           <p>{actorName(bounty.token, bounty.poster, bounty.posterProfile)}</p>
+          <p className="trust-mini">{posterPaidLabel(bounty.posterTrust)}</p>
+          {awaitingPay(bounty, now) ? <p className="await-pill">Awaiting pay</p> : null}
         </div>
         <div className="col-reward">
           <p className="money">{amountNumber(bounty.rewardMinor, bounty.token)}</p>

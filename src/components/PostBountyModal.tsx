@@ -1,5 +1,5 @@
 import { parseToMinor } from '@shared/money.ts'
-import type { Token } from '@shared/types.ts'
+import type { ProofType, Token } from '@shared/types.ts'
 import { useEffect, useState, type DragEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useProfile } from '../context/ProfileContext.tsx'
@@ -34,8 +34,9 @@ export function PostBountyModal({ open, onClose }: { open: boolean; onClose: () 
   const [guideOpen, setGuideOpen] = useState(false)
   const [legal, setLegal] = useState(false)
   const [specific, setSpecific] = useState(false)
-  const [reward, setReward] = useState('10')
+  const [reward, setReward] = useState('2')
   const [token, setToken] = useState<Token>('NIM')
+  const [proofType, setProofType] = useState<ProofType>('url')
   const [dropHot, setDropHot] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -120,6 +121,7 @@ export function PostBountyModal({ open, onClose }: { open: boolean; onClose: () 
         deadline: Date.now() + duration * 86_400_000,
         poster,
         imageUrl,
+        proofType,
       })
       close()
       navigate(`/b/${bounty.id}`)
@@ -352,6 +354,23 @@ export function PostBountyModal({ open, onClose }: { open: boolean; onClose: () 
 
             <label className="mb-4 block">
               <span className="mb-1 block font-semibold">
+                Proof type <span className="req">*</span>
+              </span>
+              <span className="mb-2 block text-[12px] text-muted">What the hunter must send.</span>
+              <select
+                className="field"
+                value={proofType}
+                onChange={(event) => setProofType(event.target.value as ProofType)}
+              >
+                <option value="url">URL</option>
+                <option value="text">Text</option>
+                <option value="image">Image</option>
+                <option value="any">Any (note, URL, or image)</option>
+              </select>
+            </label>
+
+            <label className="mb-4 block">
+              <span className="mb-1 block font-semibold">
                 Duration <span className="req">*</span>
               </span>
               <select
@@ -389,12 +408,12 @@ export function PostBountyModal({ open, onClose }: { open: boolean; onClose: () 
             <p className="pool-kicker mt-0 mb-2">Step 2</p>
             <h2 className="mt-0 mb-2 text-[28px] tracking-[-0.04em]">Rewards</h2>
             <p className="mt-0 mb-4 text-[14px] text-muted">
-              One hunter wins the full pool. You pay them from your wallet when you accept their work.
+              NIM is the default. You pay the hunter from Nimiq Pay when you accept the work. USDT on Polygon is optional.
             </p>
             <div className="post-reward-grid">
               <label>
                 <span className="mb-1 block font-semibold">
-                  Reward <span className="req">*</span>
+                  Reward in {token} <span className="req">*</span>
                 </span>
                 <input
                   className="field font-mono"
@@ -404,16 +423,16 @@ export function PostBountyModal({ open, onClose }: { open: boolean; onClose: () 
                 />
               </label>
               <label>
-                <span className="mb-1 block font-semibold">Token</span>
+                <span className="mb-1 block font-semibold">Asset</span>
                 <select className="field" value={token} onChange={(event) => setToken(event.target.value as Token)}>
-                  <option value="NIM">NIM</option>
-                  <option value="USDT">USDT</option>
+                  <option value="NIM">NIM (Nimiq Pay)</option>
+                  <option value="USDT">USDT (Polygon)</option>
                 </select>
               </label>
             </div>
             <p className="mt-0 mb-4 text-[13px] text-muted">
-              Duration: {DURATIONS.find((item) => item.days === duration)?.label}. Number of winners: 1.
-              {location.trim() ? ` Location: ${location.trim()}.` : ''}
+              Duration: {DURATIONS.find((item) => item.days === duration)?.label}. Number of winners: 1. Proof:{' '}
+              {proofType}.{location.trim() ? ` Location: ${location.trim()}.` : ''}
             </p>
             {error ? <ErrorNote message={error} /> : null}
           </div>

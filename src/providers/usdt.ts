@@ -18,7 +18,7 @@ function getProvider(): EthereumProvider {
   if (!window.ethereum) {
     throw new AppError(
       'wallet_unavailable',
-      'Ethereum wallet is not available. Open Board inside Nimiq Pay to pay with USDT.',
+      'No Ethereum wallet for USDT. Open Board inside Nimiq Pay, or connect a Polygon wallet.',
       true,
     )
   }
@@ -51,7 +51,7 @@ export async function requestEthAccounts(): Promise<string[]> {
       .filter((value): value is string => typeof value === 'string' && isValidEthAddress(value))
       .map(normalizeEthAddress)
   } catch (error) {
-    throw classifyWalletError(error)
+    throw classifyWalletError(error, 'USDT')
   }
 }
 
@@ -87,7 +87,7 @@ export async function ensurePolygon(): Promise<void> {
           params: [POLYGON_CHAIN],
         })
       } catch (addError) {
-        throw classifyWalletError(addError)
+        throw classifyWalletError(addError, 'USDT')
       }
       return
     }
@@ -150,7 +150,7 @@ export async function sendUsdt(input: {
     }
     return hash
   } catch (error) {
-    throw classifyWalletError(error)
+    throw classifyWalletError(error, 'USDT')
   }
 }
 

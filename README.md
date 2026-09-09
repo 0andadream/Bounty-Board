@@ -16,9 +16,9 @@ Most bounty boards either custody funds or live in a chat thread with no proof o
 
 1. Open Board inside Nimiq Pay. The Mini App lands on the board, not the marketing page.
 2. Wallet connects via `listAccounts()` (native confirmation).
-3. Poster writes a title, summary, deliverables, reward, token, and duration.
-4. A hunter taps **Submit work** and sends proof (links and notes).
-5. Poster reviews the entry, then taps **Pay**. Nimiq Pay shows the native confirmation.
+3. Poster writes a title, summary, deliverables, NIM reward (USDT is optional), proof type, and duration.
+4. A hunter taps **Submit work** and sends proof (links, notes, or a photo).
+5. Poster reviews the entry, then taps **Pay hunter in NIM**. Nimiq Pay shows the native confirmation.
 6. NIM payments attach memo `BOUNTY:<id>:PAID`. USDT payments go to Polygon USDT.
 7. Board records paid **only** after the wallet returns a transaction hash.
 8. Receipt screen: paid stamp, both wallets, hash, timestamp, share.
@@ -123,8 +123,16 @@ For testnet NIM without spending mainnet funds: in Nimiq Pay, long-press Setting
 |---|---|
 | `VITE_API_URL` | Worker origin. Leave empty in local dev (Vite proxy). Set in production if the UI is hosted separately. |
 | `VITE_APP_URL` | Public Mini App origin used on receipts and share links. |
+| `SEED_BOUNTIES` | Worker var. Default `true`. Inserts 5 live NIM demo bounties when D1 is empty. Set `false` to disable. |
 
-The Worker does not need API secrets.
+The Worker does not need API secrets. Demo poster wallet (documented): `NQ30 A7HU XB26 K9H2 QFHT MB58 A0G1 DEXQ CSG5`. Pay still goes to the hunter when a poster pays.
+
+Open in Nimiq Pay:
+
+```
+nimiqpay://miniapp?url=bounty-board.mattt-dreamer.workers.dev
+https://nimpay.app/miniapps/open/bounty-board.mattt-dreamer.workers.dev
+```
 
 ## Backend setup
 

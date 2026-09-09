@@ -6,6 +6,7 @@ workers_dev = true
 
 [vars]
 APP_NAME = "Board"
+SEED_BOUNTIES = "true"
 
 # Cloudflare dashboard: set Build command to `npm run build` so ./dist exists.
 [[d1_databases]]

@@ -1,6 +1,7 @@
 import type { BoardStats, Bounty } from '@shared/types.ts'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { OpenInNimiqPay, SiteFooter } from '../components/PayLaunch.tsx'
 import { listAllBounties, listBounties } from '../lib/api.ts'
 
 const EMPTY: BoardStats = { live: 0, review: 0, paid: 0, likes: 0 }
@@ -14,7 +15,7 @@ const STEPS = [
 const FEATURES = [
   { title: 'No escrow', body: 'Funds stay in your wallet until you accept the work and send payment.' },
   { title: 'One winner', body: 'Board pays a single hunter. Boost the pool if you want more heat on the spec.' },
-  { title: 'NIM or USDT', body: 'Post in NIM on Nimiq, or USDT on Polygon. Same board, same receipt.' },
+  { title: 'NIM first', body: 'Post in NIM on Nimiq Pay. USDT on Polygon is the optional extra. Same board, same receipt.' },
   { title: 'Onchain receipt', body: 'When you pay, the tx hash is the proof. Public, shareable, done.' },
 ]
 
@@ -86,10 +87,12 @@ export function Landing() {
           Post a bounty. One hunter ships it. You pay them wallet to wallet. No escrow, no committee,
           just a spec and a receipt.
         </p>
+        <p className="land-sub">NIM in Nimiq Pay. No escrow. The receipt is the tx.</p>
         <div className="land-cta">
           <Link to="/bounties" className="btn-accent land-cta-main no-underline">
             Open board
           </Link>
+          <OpenInNimiqPay className="btn-ghost land-cta-main no-underline" />
         </div>
       </section>
 
@@ -105,24 +108,32 @@ export function Landing() {
 
       <section className="land-pool">
         <p className="land-kicker">On the board right now</p>
-        <div className="land-stats">
-          <div>
-            <strong>{stats.live}</strong>
-            <span>Live bounties</span>
+        {stats.live === 0 && stats.review === 0 && stats.paid === 0 ? (
+          <div className="land-cta">
+            <Link to="/bounties?create=1" className="btn-accent land-cta-main no-underline">
+              Post the first bounty — 2 min
+            </Link>
           </div>
-          <div>
-            <strong>{stats.review}</strong>
-            <span>In review</span>
+        ) : (
+          <div className="land-stats">
+            <div>
+              <strong>{stats.live}</strong>
+              <span>Live bounties</span>
+            </div>
+            <div>
+              <strong>{stats.review}</strong>
+              <span>In review</span>
+            </div>
+            <div>
+              <strong>{stats.paid}</strong>
+              <span>Paid out</span>
+            </div>
+            <div>
+              <strong>{stats.likes}</strong>
+              <span>Likes</span>
+            </div>
           </div>
-          <div>
-            <strong>{stats.paid}</strong>
-            <span>Paid out</span>
-          </div>
-          <div>
-            <strong>{stats.likes}</strong>
-            <span>Likes</span>
-          </div>
-        </div>
+        )}
       </section>
 
       <section className="land-steps">
@@ -192,13 +203,11 @@ export function Landing() {
           <Link to="/bounties" className="btn-accent land-cta-main no-underline">
             Open board
           </Link>
+          <OpenInNimiqPay className="btn-ghost land-cta-main no-underline" />
         </div>
       </section>
 
-      <footer className="land-foot">
-        <span className="brand-word">BOUNTY BOARD</span>
-        <p>Wallet to wallet. One hunter. No escrow.</p>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

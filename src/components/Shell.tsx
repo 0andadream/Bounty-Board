@@ -5,6 +5,7 @@ import { useWallet } from '../context/WalletContext.tsx'
 import { shortWallet } from '../lib/format.ts'
 import { shouldUseMiniApp } from '../providers/nimiq.ts'
 import { goBack } from './BackKey.tsx'
+import { OpenInNimiqPay, SiteFooter } from './PayLaunch.tsx'
 import { Avatar } from './ui.tsx'
 
 export function Shell() {
@@ -56,18 +57,21 @@ export function Shell() {
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                className="btn-accent"
-                title={wallet.error ?? 'Connect wallet'}
-                onClick={() => void wallet.connect().catch(() => undefined)}
-              >
-                {wallet.status === 'connecting' ? 'Connecting…' : (
-                  <>
-                    Connect<span className="hidden sm:inline"> wallet</span>
-                  </>
-                )}
-              </button>
+              <>
+                <OpenInNimiqPay className="btn-ghost no-underline hidden sm:inline-flex" />
+                <button
+                  type="button"
+                  className="btn-accent"
+                  title={wallet.error ?? 'Connect with Nimiq Hub'}
+                  onClick={() => void wallet.connect().catch(() => undefined)}
+                >
+                  {wallet.status === 'connecting' ? 'Connecting…' : (
+                    <>
+                      Connect<span className="hidden sm:inline"> wallet</span>
+                    </>
+                  )}
+                </button>
+              </>
             )}
             <NavLink to="/profile" className="profile-chip" aria-label="Profile settings" title="Profile">
               <Avatar profile={profile.me} wallet={chipWallet} />
@@ -80,6 +84,7 @@ export function Shell() {
           </p>
         ) : null}
         <Outlet />
+        <SiteFooter />
       </div>
     </div>
   )

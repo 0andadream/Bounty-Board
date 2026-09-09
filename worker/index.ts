@@ -8,7 +8,18 @@ import {
   sameAddress,
 } from '../shared/address.ts'
 import { canClaim, canPay, canSubmit, isHttpUrl, isProofValue } from '../shared/machine.ts'
-import type { BoardStats, Bounty, BountyListTab, BountySort, Profile, StoredStatus, Token } from '../shared/types.ts'
+import { trustMap } from '../shared/trust.ts'
+import type {
+  BoardStats,
+  Bounty,
+  BountyListTab,
+  BountySort,
+  Profile,
+  ProofType,
+  StoredStatus,
+  Token,
+} from '../shared/types.ts'
+import { maybeSeed } from './seed.ts'
 
 type D1Stmt = {
   bind: (...args: unknown[]) => D1Stmt
@@ -23,6 +34,7 @@ type D1Database = {
 
 type Env = {
   DB: D1Database
+  SEED_BOUNTIES?: string
 }
 
 type BountyRow = {
@@ -45,6 +57,8 @@ type BountyRow = {
   image_url?: string | null
   proof_note?: string | null
   proof_image?: string | null
+  demo?: number | null
+  proof_type?: string | null
 }
 
 const SCHEMA = [
@@ -193,7 +207,14 @@ function mapBounty(row: BountyRow): Bounty {
     imageUrl: row.image_url ?? null,
     proofNote: row.proof_note ?? null,
     proofImage: row.proof_image ?? null,
+    demo: Number(row.demo ?? 0) === 1,
+    proofType: parseProofType(row.proof_type),
   }
+}
+
+function parseProofType(value: string | null | undefined): ProofType {
+  if (value === 'text' || value === 'url' || value === 'image') return value
+  return 'any'
 }
 
 function normalizeImage(input: unknown): string | null {
@@ -255,7 +276,13 @@ async function ensureSchema(db: D1Database): Promise<void> {
   for (const statement of SCHEMA) {
     await db.prepare(statement).run()
   }
-  for (const column of ['image_url TEXT', 'proof_note TEXT', 'proof_image TEXT']) {
+  for (const column of [
+    'image_url TEXT',
+    'proof_note TEXT',
+    'proof_image TEXT',
+    'demo INTEGER DEFAULT 0',
+    'proof_type TEXT',
+  ]) {
     try {
       await db.prepare(`ALTER TABLE bounties ADD COLUMN ${column}`).run()
     } catch {
@@ -304,6 +331,24 @@ async function withProfiles(db: D1Database, bounties: Bounty[]): Promise<Bounty[
   return attachProfiles(bounties, await loadProfileMap(db, wallets))
 }
 
+async function prepare(env: Env): Promise<void> {
+  await ensureSchema(env.DB)
+  await maybeSeed(env.DB, env.SEED_BOUNTIES)
+}
+
+function attachTrust(bounties: Bounty[], all: Bounty[]): Bounty[] {
+  const map = trustMap(all)
+  return bounties.map((bounty) => ({
+    ...bounty,
+    posterTrust: map.get(likeWalletKey(bounty.poster)) ?? bounty.posterTrust,
+  }))
+}
+
+async function loadAllMapped(db: D1Database): Promise<Bounty[]> {
+  const rows = (await db.prepare('SELECT * FROM bounties ORDER BY created_at DESC').all<BountyRow>()).results
+  return rows.map(mapBounty)
+}
+
 async function getBounty(db: D1Database, id: string, viewer?: string | null): Promise<Bounty | null> {
   const row = await db.prepare('SELECT * FROM bounties WHERE id = ?').bind(id).first<BountyRow>()
   if (!row) return null
@@ -315,24 +360,25 @@ async function getBounty(db: D1Database, id: string, viewer?: string | null): Pr
     bounty.liked = Boolean(hit)
   }
   const [hydrated] = await withProfiles(db, [bounty])
-  return hydrated
+  const all = attachLikes(await loadAllMapped(db), await likeCounts(db), new Set())
+  return attachTrust([hydrated], all)[0]
 }
 
 app.get('/api/health', (c) => c.json({ ok: true, name: 'Board' }))
 
 app.get('/api/bounties', async (c) => {
-  await ensureSchema(c.env.DB)
+  await prepare(c.env)
   const tab = (c.req.query('tab') ?? 'open') as BountyListTab | 'all'
   const address = c.req.query('address')
   const viewerRaw = c.req.query('viewer')
   const sort = (c.req.query('sort') ?? 'new') as BountySort
-  const rows = (await c.env.DB.prepare('SELECT * FROM bounties ORDER BY created_at DESC').all<BountyRow>()).results
-  let bounties = rows.map(mapBounty)
+  let bounties = await loadAllMapped(c.env.DB)
   const clock = now()
   const viewer = viewerRaw && isLikeWallet(viewerRaw) ? likeWalletKey(viewerRaw) : null
   const counts = await likeCounts(c.env.DB)
   const liked = await likedSet(c.env.DB, viewer)
   bounties = attachLikes(bounties, counts, liked)
+  const all = bounties
   const stats = computeStats(bounties, clock, [...counts.values()].reduce((sum, n) => sum + n, 0))
 
   if (address) {
@@ -352,12 +398,12 @@ app.get('/api/bounties', async (c) => {
     bounties = bounties.filter((bounty) => bounty.status === 'paid')
   }
 
-  const sorted = sortBounties(bounties, sort)
+  const sorted = attachTrust(sortBounties(bounties, sort), all)
   return c.json({ bounties: await withProfiles(c.env.DB, sorted), stats })
 })
 
 app.get('/api/profiles', async (c) => {
-  await ensureSchema(c.env.DB)
+  await prepare(c.env)
   const username = c.req.query('username')
   const walletRaw = c.req.query('wallet')
   const walletsRaw = c.req.query('wallets')
@@ -387,7 +433,7 @@ app.get('/api/profiles', async (c) => {
 })
 
 app.post('/api/profiles', async (c) => {
-  await ensureSchema(c.env.DB)
+  await prepare(c.env)
   const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
   if (!body) return jsonError('Invalid JSON.')
   const walletRaw = typeof body.wallet === 'string' ? body.wallet : ''
@@ -445,7 +491,7 @@ app.post('/api/profiles', async (c) => {
 })
 
 app.get('/api/bounties/:id', async (c) => {
-  await ensureSchema(c.env.DB)
+  await prepare(c.env)
   const viewerRaw = c.req.query('viewer')
   const viewer = viewerRaw && isLikeWallet(viewerRaw) ? likeWalletKey(viewerRaw) : null
   const bounty = await getBounty(c.env.DB, c.req.param('id').toUpperCase(), viewer)
@@ -454,7 +500,7 @@ app.get('/api/bounties/:id', async (c) => {
 })
 
 app.post('/api/bounties/:id/like', async (c) => {
-  await ensureSchema(c.env.DB)
+  await prepare(c.env)
   const id = c.req.param('id').toUpperCase()
   const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
   const walletRaw = typeof body?.wallet === 'string' ? body.wallet : ''
@@ -480,7 +526,7 @@ app.post('/api/bounties/:id/like', async (c) => {
 })
 
 app.post('/api/bounties', async (c) => {
-  await ensureSchema(c.env.DB)
+  await prepare(c.env)
   const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
   if (!body) return jsonError('Invalid JSON.')
 
@@ -503,6 +549,7 @@ app.post('/api/bounties', async (c) => {
   if (!isValidWallet(token, posterRaw)) return jsonError('Poster wallet does not match the selected token.')
   if (!/^\d+$/.test(rewardMinor) || BigInt(rewardMinor) <= 0n) return jsonError('Reward must be a positive amount.')
   if (!Number.isFinite(deadline) || deadline <= now()) return jsonError('Deadline must be in the future.')
+  const proofType = parseProofType(typeof body.proofType === 'string' ? body.proofType : 'any')
 
   const poster = normalizeWallet(token, posterRaw)
   let id = randomId()
@@ -516,10 +563,10 @@ app.post('/api/bounties', async (c) => {
   await c.env.DB.prepare(
     `INSERT INTO bounties (
       id, title, brief, reward_minor, token, deadline, status, poster, hunter, proof, tx_hash,
-      created_at, claimed_at, submitted_at, paid_at, image_url
-    ) VALUES (?, ?, ?, ?, ?, ?, 'open', ?, NULL, NULL, NULL, ?, NULL, NULL, NULL, ?)`,
+      created_at, claimed_at, submitted_at, paid_at, image_url, demo, proof_type
+    ) VALUES (?, ?, ?, ?, ?, ?, 'open', ?, NULL, NULL, NULL, ?, NULL, NULL, NULL, ?, 0, ?)`,
   )
-    .bind(id, title, brief, rewardMinor, token, deadline, poster, createdAt, imageUrl)
+    .bind(id, title, brief, rewardMinor, token, deadline, poster, createdAt, imageUrl, proofType)
     .run()
 
   const bounty = await getBounty(c.env.DB, id)
@@ -527,7 +574,7 @@ app.post('/api/bounties', async (c) => {
 })
 
 app.post('/api/bounties/:id/boost', async (c) => {
-  await ensureSchema(c.env.DB)
+  await prepare(c.env)
   const id = c.req.param('id').toUpperCase()
   const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
   const walletRaw = typeof body?.wallet === 'string' ? body.wallet : ''
@@ -555,7 +602,7 @@ app.post('/api/bounties/:id/boost', async (c) => {
 })
 
 app.post('/api/bounties/:id/claim', async (c) => {
-  await ensureSchema(c.env.DB)
+  await prepare(c.env)
   const id = c.req.param('id').toUpperCase()
   const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
   const hunterRaw = typeof body?.hunter === 'string' ? body.hunter : ''
@@ -588,7 +635,7 @@ app.post('/api/bounties/:id/claim', async (c) => {
 })
 
 app.post('/api/bounties/:id/submit', async (c) => {
-  await ensureSchema(c.env.DB)
+  await prepare(c.env)
   const id = c.req.param('id').toUpperCase()
   const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
   const hunterRaw = typeof body?.hunter === 'string' ? body.hunter : ''
@@ -614,6 +661,10 @@ app.post('/api/bounties/:id/submit', async (c) => {
   const proof = links.join('\n')
   const proofValue = proof || image || ''
   if (!proofValue && !note) return jsonError('Add a link, photo, or note so the poster can review your work.')
+  const required = bounty.proofType ?? 'any'
+  if (required === 'url' && !proof) return jsonError('This bounty needs a proof URL.')
+  if (required === 'image' && !image) return jsonError('This bounty needs a proof photo.')
+  if (required === 'text' && !note) return jsonError('This bounty needs a written note.')
 
   const hunter = normalizeWallet(bounty.token, hunterRaw)
   const check = canSubmit(bounty, hunter, isProofValue(proofValue) ? proofValue : `https://board.local/entry`)
@@ -636,13 +687,16 @@ app.post('/api/bounties/:id/submit', async (c) => {
 })
 
 app.post('/api/bounties/:id/pay', async (c) => {
-  await ensureSchema(c.env.DB)
+  await prepare(c.env)
   const id = c.req.param('id').toUpperCase()
   const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
   const posterRaw = typeof body?.poster === 'string' ? body.poster : ''
   const txHash = typeof body?.txHash === 'string' ? body.txHash.trim() : ''
   const bounty = await getBounty(c.env.DB, id)
   if (!bounty) return jsonError('Bounty not found.', 404, 'not_found')
+  const asset = body?.asset === 'USDT' || body?.asset === 'NIM' ? body.asset : bounty.token
+  if (asset !== bounty.token) return jsonError('Asset does not match this bounty.')
+  if (!txHash) return jsonError('A transaction hash is required before this bounty can be marked paid.')
   if (!isValidWallet(bounty.token, posterRaw)) {
     return jsonError('Poster wallet does not match this bounty token.')
   }

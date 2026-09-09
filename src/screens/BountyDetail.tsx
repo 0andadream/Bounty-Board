@@ -1,4 +1,5 @@
 import { viewStatus } from '@shared/machine.ts'
+import { awaitingPay, posterPaidLabel } from '@shared/trust.ts'
 import { lunaFromNimMinor, parseToMinor } from '@shared/money.ts'
 import { sameAddress } from '@shared/address.ts'
 import type { Bounty } from '@shared/types.ts'
@@ -155,7 +156,7 @@ export function BountyDetail() {
               to: hunter,
               amountMinor: BigInt(ticket.rewardMinor),
             })
-      const next = await markPaid(ticket.id, poster, txHash)
+      const next = await markPaid(ticket.id, poster, txHash, ticket.token)
       setBounty(next)
       navigate(`/b/${next.id}/receipt`)
     } catch (err) {
@@ -196,8 +197,14 @@ export function BountyDetail() {
               <span className="font-semibold">{actorName(bounty.token, bounty.poster, bounty.posterProfile)}</span>
             )}
             <p className="m-0 text-[13px] text-muted">Posted {timeAgo(bounty.createdAt, now)}</p>
+            <p className="trust-mini mt-1 mb-0">{posterPaidLabel(bounty.posterTrust)}</p>
           </div>
         </div>
+
+        {bounty.demo ? (
+          <Banner>Demo bounty — pay still goes to the hunter’s wallet when the poster pays.</Banner>
+        ) : null}
+        {awaitingPay(ticket, now) ? <Banner>Awaiting pay. Hunter submitted and is waiting on the poster.</Banner> : null}
 
         <div className="bounty-hero">
           {bounty.imageUrl ? (
@@ -246,7 +253,9 @@ export function BountyDetail() {
             {ticket.proofImage ? <img src={ticket.proofImage} alt="" className="entry-preview" /> : null}
             {canPayNow ? (
               <button className="btn-accent mt-4 py-3 px-5" type="button" disabled={busy !== null} onClick={() => void onPay()}>
-                {busy === 'pay' ? 'Waiting on wallet…' : `Pay ${money(bounty.rewardMinor, bounty.token)}`}
+                {busy === 'pay'
+                  ? 'Waiting on Nimiq Pay…'
+                  : `Pay hunter in ${bounty.token} · ${money(bounty.rewardMinor, bounty.token)}`}
               </button>
             ) : null}
           </section>
@@ -340,8 +349,8 @@ export function BountyDetail() {
           <div className="mt-4">
             <p className="mt-0 mb-3 text-[13px] text-muted">
               {posterWalletConnected
-                ? 'This wallet did not post this bounty. Connect the poster wallet to pay. The bounty stays submitted until a tx hash comes back.'
-                : 'Connect the poster wallet to pay the hunter. The bounty stays submitted until a tx hash comes back.'}
+                ? 'This wallet did not post this bounty. Connect the poster wallet in Nimiq Pay or Hub. The bounty stays submitted until a tx hash comes back.'
+                : 'Connect the poster wallet in Nimiq Pay or Hub to pay the hunter. The bounty stays submitted until a tx hash comes back.'}
             </p>
             <button
               type="button"
@@ -360,7 +369,9 @@ export function BountyDetail() {
 
         {canPayNow ? (
           <button className="btn-accent w-full py-3 mt-5" type="button" disabled={busy !== null} onClick={() => void onPay()}>
-            {busy === 'pay' ? 'Waiting on wallet…' : `Pay ${money(bounty.rewardMinor, bounty.token)}`}
+            {busy === 'pay'
+              ? 'Waiting on Nimiq Pay…'
+              : `Pay hunter in ${bounty.token} · ${money(bounty.rewardMinor, bounty.token)}`}
           </button>
         ) : null}
 

@@ -1,4 +1,5 @@
-import type { Bounty, Profile } from '@shared/types.ts'
+import { posterPaidLabel, trustForPoster } from '@shared/trust.ts'
+import type { Bounty, PosterTrust, Profile } from '@shared/types.ts'
 import { type ReactNode } from 'react'
 import { money } from '../lib/format.ts'
 import { Avatar, BountyCard, EmptyTicket, FeedHead } from './ui.tsx'
@@ -53,6 +54,7 @@ export function ProfileStage({
   onPickAvatar,
   extra,
   editLabel,
+  trust,
 }: {
   wallet: string
   username: string
@@ -76,6 +78,7 @@ export function ProfileStage({
   onPickAvatar?: (file: File) => void
   extra?: ReactNode
   editLabel?: string
+  trust?: PosterTrust
 }) {
   const draft: Profile = {
     wallet,
@@ -87,6 +90,7 @@ export function ProfileStage({
   }
   const work = [...posted, ...claimed]
   const unique = [...new Map(work.map((row) => [row.id, row])).values()]
+  const posterTrust = trust ?? posted[0]?.posterTrust ?? trustForPoster(posted, wallet)
 
   return (
     <div className="profile-stage">
@@ -128,6 +132,15 @@ export function ProfileStage({
           </div>
           <h1 className="profile-name">{username || 'yourname'}</h1>
           <p className="profile-handle">{profileHandle(username)}</p>
+          <p className="trust-mini">
+            {posterPaidLabel(posterTrust)}
+            {posterTrust.unpaid ? ` · ${posterTrust.unpaid} unpaid after submit` : ''}
+            {' · '}
+            Settled {money(posterTrust.settledNim, 'NIM')}
+            {BigInt(posterTrust.settledUsdt) > 0n ? ` · ${money(posterTrust.settledUsdt, 'USDT')}` : ''}
+            {' · '}
+            {posterTrust.likes} likes
+          </p>
           <div className="profile-actions">
             {own && editLabel !== undefined ? (
               <button type="button" className="btn-ghost" onClick={onEdit}>
@@ -199,12 +212,35 @@ export function ProfileStage({
           </div>
           <div className="profile-stats">
             <div>
-              <span>Projects completed</span>
-              <strong>{completed}</strong>
+              <span>Posted</span>
+              <strong>{posterTrust.posted}</strong>
             </div>
             <div>
-              <span>Amount earned</span>
-              <strong>{earned}</strong>
+              <span>Paid / completed</span>
+              <strong>
+                {posterTrust.paid}/{posterTrust.completed}
+              </strong>
+            </div>
+            <div>
+              <span>Unpaid after submit</span>
+              <strong>{posterTrust.unpaid}</strong>
+            </div>
+            <div>
+              <span>Settled</span>
+              <strong>
+                {money(posterTrust.settledNim, 'NIM')}
+                {BigInt(posterTrust.settledUsdt) > 0n ? ` · ${money(posterTrust.settledUsdt, 'USDT')}` : ''}
+              </strong>
+            </div>
+            <div>
+              <span>Likes</span>
+              <strong>{posterTrust.likes}</strong>
+            </div>
+            <div>
+              <span>Earned as hunter</span>
+              <strong>
+                {completed} · {earned}
+              </strong>
             </div>
           </div>
           <dl className="profile-meta">

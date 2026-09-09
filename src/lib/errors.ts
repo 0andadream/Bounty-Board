@@ -36,7 +36,7 @@ export function toErrorMessage(error: unknown): string {
   return 'Something went wrong. Try again.'
 }
 
-export function classifyWalletError(error: unknown): AppError {
+export function classifyWalletError(error: unknown, token: 'NIM' | 'USDT' = 'NIM'): AppError {
   const text = error instanceof Error ? error.message : String(error)
   const lower = text.toLowerCase()
   const code =
@@ -45,18 +45,30 @@ export function classifyWalletError(error: unknown): AppError {
       : undefined
 
   if (code === 4001 || /reject|denied|cancel|permission_denied/.test(lower)) {
-    return new AppError('tx_rejected', 'Payment was rejected in the wallet.', true)
+    return new AppError(
+      'tx_rejected',
+      token === 'USDT'
+        ? 'USDT payment was rejected in the wallet. You can retry.'
+        : 'Payment was rejected in Nimiq Pay. You can retry.',
+      true,
+    )
   }
-  if (code === 4902 || /unrecognized chain|wrong network|chain/.test(lower)) {
+  if (token === 'USDT' && (code === 4902 || /unrecognized chain|wrong network|chain/.test(lower))) {
     return new AppError('wrong_network', 'Switch to Polygon to pay with USDT.', true)
   }
   if (/insufficient|balance/.test(lower)) {
-    return new AppError('insufficient_balance', 'Not enough balance to complete this payment.', true)
+    return new AppError(
+      'insufficient_balance',
+      token === 'USDT'
+        ? 'Not enough USDT on Polygon to complete this payment.'
+        : 'Not enough NIM in this wallet to complete the payment.',
+      true,
+    )
   }
   if (/timeout|timed out|not detected|not running|inject/.test(lower)) {
     return new AppError(
       'wallet_unavailable',
-      'Nimiq wallet is not available. Connect with Nimiq Hub, or open Board inside Nimiq Pay.',
+      'Nimiq Pay is not available. Connect with Nimiq Hub, or open Board inside Nimiq Pay.',
       true,
     )
   }
