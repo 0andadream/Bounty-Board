@@ -80,7 +80,8 @@ export function amountNumber(amountMinor: bigint | string, token: Token): string
   return minorToDisplay(amountMinor, token)
 }
 
-export function submissionsCount(bounty: { hunter: string | null }): number {
+export function submissionsCount(bounty: Bounty): number {
+  if (bounty.entries && bounty.entries.length > 0) return bounty.entries.length
   return bounty.hunter ? 1 : 0
 }
 

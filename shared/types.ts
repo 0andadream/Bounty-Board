@@ -2,6 +2,19 @@ export type Token = 'NIM' | 'USDT'
 export type StoredStatus = 'open' | 'claimed' | 'submitted' | 'paid'
 export type ViewStatus = StoredStatus | 'expired'
 export type ProofType = 'text' | 'url' | 'image' | 'any'
+export type EntryStatus = 'submitted' | 'paid'
+
+export type BountyEntry = {
+  hunter: string
+  proof: string | null
+  proofNote: string | null
+  proofImage: string | null
+  status: EntryStatus
+  txHash: string | null
+  submittedAt: number
+  paidAt: number | null
+  hunterProfile?: Profile | null
+}
 
 export type PosterTrust = {
   posted: number
@@ -48,6 +61,8 @@ export type Bounty = {
   proofType?: ProofType
   demo?: boolean
   posterTrust?: PosterTrust
+  winners?: number
+  entries?: BountyEntry[]
 }
 
 export type BoardStats = {

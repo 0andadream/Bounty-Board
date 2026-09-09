@@ -1,3 +1,4 @@
+import { listEntries, paidCount, winnersMax } from '@shared/machine.ts'
 import { paymentMemo } from '@shared/money.ts'
 import type { Bounty } from '@shared/types.ts'
 import { useEffect, useState } from 'react'
@@ -63,7 +64,8 @@ export function Receipt() {
     )
   }
 
-  if (bounty.status !== 'paid' || !bounty.txHash || !bounty.hunter || !bounty.paidAt) {
+  const paidEntries = listEntries(bounty).filter((entry) => entry.status === 'paid' && entry.txHash)
+  if (paidEntries.length === 0) {
     return (
       <main className="screen">
         <BackKey />
@@ -78,11 +80,12 @@ export function Receipt() {
   }
 
   const paid = bounty
-  const hunter = bounty.hunter
-  const txHash = bounty.txHash
+  const hunter = paidEntries[0].hunter
+  const txHash = paidEntries[0].txHash!
   const link = receiptUrl(paid.id)
   const explore = explorerUrl(paid.token, txHash)
   const memo = paymentMemo(paid.id)
+  const allPaid = paidCount(bounty) >= winnersMax(bounty)
 
   async function share() {
     const text = [
@@ -124,7 +127,7 @@ export function Receipt() {
               <p className="m-0 font-mono text-[10px] tracking-[0.28em] uppercase text-muted">Board receipt</p>
               <p className="mt-1 mb-0 font-mono text-[12px] tracking-[0.16em] text-muted">#{bounty.id}</p>
             </div>
-            <Stamp status="paid" />
+            <Stamp status={allPaid ? 'paid' : 'submitted'} />
           </div>
           <h1 className="mt-5 mb-1 text-[22px] leading-tight">{bounty.title}</h1>
           <p className="mt-3 mb-0 money text-[32px]">{money(bounty.rewardMinor, bounty.token)}</p>
@@ -138,16 +141,35 @@ export function Receipt() {
           <hr className="rule my-5" />
           <p className="m-0 font-mono text-[10px] tracking-[0.18em] uppercase text-muted">Poster</p>
           <p className="addr mt-1 mb-4">{formatWallet(bounty.token, bounty.poster)}</p>
-          <p className="m-0 font-mono text-[10px] tracking-[0.18em] uppercase text-muted">Hunter</p>
-          <p className="addr mt-1 mb-4">{formatWallet(bounty.token, bounty.hunter)}</p>
+          <p className="m-0 font-mono text-[10px] tracking-[0.18em] uppercase text-muted">
+            Winners paid {paidEntries.length}/{winnersMax(bounty)}
+          </p>
+          {paidEntries.map((entry) => {
+            const hash = entry.txHash!
+            const url = explorerUrl(bounty.token, hash)
+            return (
+              <div key={hash} className="mt-3 mb-4">
+                <p className="addr mt-0 mb-1">{formatWallet(bounty.token, entry.hunter)}</p>
+                <p className="addr mt-0 mb-0">
+                  {url ? (
+                    <a href={url} target="_blank" rel="noreferrer">
+                      {hash}
+                    </a>
+                  ) : (
+                    hash
+                  )}
+                </p>
+              </div>
+            )
+          })}
           <p className="m-0 font-mono text-[10px] tracking-[0.18em] uppercase text-muted">Transaction</p>
           <p className="addr mt-1 mb-1">
             {explore ? (
               <a href={explore} target="_blank" rel="noreferrer">
-                {bounty.txHash}
+                {txHash}
               </a>
             ) : (
-              bounty.txHash
+              txHash
             )}
           </p>
           {bounty.token === 'NIM' ? (
@@ -156,7 +178,7 @@ export function Receipt() {
             <p className="mt-0 mb-4 font-mono text-[12px] text-muted">USDT on Polygon</p>
           )}
           <p className="m-0 font-mono text-[10px] tracking-[0.18em] uppercase text-muted">Paid</p>
-          <p className="mt-1 mb-0">{formatWhen(bounty.paidAt)}</p>
+          <p className="mt-1 mb-0">{formatWhen(bounty.paidAt ?? paidEntries[0].paidAt ?? bounty.createdAt)}</p>
           {bounty.proof ? (
             <>
               <p className="mt-4 mb-0 font-mono text-[10px] tracking-[0.18em] uppercase text-muted">Proof</p>

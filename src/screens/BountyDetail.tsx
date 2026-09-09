@@ -1,4 +1,4 @@
-import { viewStatus } from '@shared/machine.ts'
+import { isAccepting, listEntries, openSlots, paidCount, viewStatus, winnersMax } from '@shared/machine.ts'
 import { awaitingPay, posterPaidLabel } from '@shared/trust.ts'
 import { lunaFromNimMinor, parseToMinor } from '@shared/money.ts'
 import { sameAddress } from '@shared/address.ts'
@@ -87,15 +87,18 @@ export function BountyDetail() {
   const status = viewStatus(ticket, now)
   const myAddress = wallet.addressFor(ticket.token)
   const isPoster = Boolean(myAddress && sameAddress(myAddress, ticket.poster))
-  const isHunter = Boolean(myAddress && ticket.hunter && sameAddress(myAddress, ticket.hunter))
-  const alreadySubmitted = ticket.status === 'submitted' || ticket.status === 'paid'
-  const showSubmit =
-    status !== 'expired' && !alreadySubmitted && !isPoster && (ticket.status === 'open' || isHunter)
-  const needsPosterWallet = ticket.status === 'submitted' && !isPoster && !isHunter
+  const entries = listEntries(ticket)
+  const isHunter = Boolean(
+    myAddress && entries.some((entry) => sameAddress(entry.hunter, myAddress)),
+  )
+  const showSubmit = status !== 'expired' && !isPoster && openSlots(ticket) > 0 && !isHunter
+  const unpaidEntries = entries.filter((entry) => entry.status === 'submitted')
+  const needsPosterWallet = unpaidEntries.length > 0 && !isPoster && !isHunter
   const posterWalletConnected = Boolean(myAddress)
-  const canPayNow = ticket.status === 'submitted' && isPoster
+  const canPayNow = unpaidEntries.length > 0 && isPoster
+  const maxWinners = winnersMax(ticket)
+  const paidWinners = paidCount(ticket)
   const canBoost = status !== 'paid' && status !== 'expired'
-  const hasEntry = Boolean(ticket.proof || ticket.proofNote || ticket.proofImage)
   const progress = timeProgress(ticket.createdAt, ticket.deadline, now)
 
   async function ensureAddress(): Promise<string> {
@@ -136,13 +139,11 @@ export function BountyDetail() {
     }
   }
 
-  async function onPay() {
-    if (!ticket.hunter) return
+  async function onPay(hunter: string) {
     setError(null)
     setBusy('pay')
     try {
       const poster = await ensureAddress()
-      const hunter = ticket.hunter
       const txHash =
         ticket.token === 'NIM'
           ? await sendBountyPayment({
@@ -156,9 +157,9 @@ export function BountyDetail() {
               to: hunter,
               amountMinor: BigInt(ticket.rewardMinor),
             })
-      const next = await markPaid(ticket.id, poster, txHash, ticket.token)
+      const next = await markPaid(ticket.id, poster, txHash, ticket.token, hunter)
       setBounty(next)
-      navigate(`/b/${next.id}/receipt`)
+      if (paidCount(next) >= winnersMax(next)) navigate(`/b/${next.id}/receipt`)
     } catch (err) {
       setError(toErrorMessage(err))
     } finally {
@@ -221,45 +222,58 @@ export function BountyDetail() {
           <p className="mt-0 mb-0 text-[15px] leading-relaxed whitespace-pre-wrap">{bounty.brief}</p>
         </section>
 
-        {isPoster && ticket.status === 'open' ? (
+        {isPoster && entries.length === 0 ? (
           <section className="entry-card">
             <h2 className="mt-0 mb-1 text-[22px] tracking-[-0.04em]">Entries for review</h2>
             <p className="mt-0 mb-0 text-[14px] text-muted">
-              Nobody has submitted yet. Hunters send work here; you review it, then pay.
+              Nobody has submitted yet. Up to {maxWinners} hunter{maxWinners === 1 ? '' : 's'} can win. You pay each
+              one wallet-to-wallet.
             </p>
           </section>
         ) : null}
 
-        {hasEntry && (ticket.status === 'submitted' || ticket.status === 'paid') ? (
-          <section className="entry-card">
-            <h2 className="mt-0 mb-1 text-[22px] tracking-[-0.04em]">
-              {isPoster ? 'Entry for review' : isHunter ? 'Your entry' : 'Submitted work'}
-            </h2>
-            {ticket.hunter ? (
+        {entries.map((entry) => {
+          const mine = Boolean(myAddress && sameAddress(myAddress, entry.hunter))
+          return (
+            <section key={entry.hunter} className="entry-card">
+              <h2 className="mt-0 mb-1 text-[22px] tracking-[-0.04em]">
+                {entry.status === 'paid'
+                  ? 'Paid'
+                  : isPoster
+                    ? 'Entry for review'
+                    : mine
+                      ? 'Your entry'
+                      : 'Submitted work'}
+              </h2>
               <div className="mb-3">
-                <PersonLine token={ticket.token} wallet={ticket.hunter} profile={ticket.hunterProfile} />
+                <PersonLine token={ticket.token} wallet={entry.hunter} profile={entry.hunterProfile} />
               </div>
-            ) : null}
-            {ticket.proofNote ? <p className="mt-0 mb-3 text-[15px] leading-relaxed">{ticket.proofNote}</p> : null}
-            {ticket.proof
-              ? ticket.proof.split('\n').map((url) => (
-                  <p key={url} className="mt-0 mb-2 text-[14px]">
-                    <a href={url} target="_blank" rel="noreferrer">
-                      {url}
-                    </a>
-                  </p>
-                ))
-              : null}
-            {ticket.proofImage ? <img src={ticket.proofImage} alt="" className="entry-preview" /> : null}
-            {canPayNow ? (
-              <button className="btn-accent mt-4 py-3 px-5" type="button" disabled={busy !== null} onClick={() => void onPay()}>
-                {busy === 'pay'
-                  ? 'Waiting on Nimiq Pay…'
-                  : `Pay hunter in ${bounty.token} · ${money(bounty.rewardMinor, bounty.token)}`}
-              </button>
-            ) : null}
-          </section>
-        ) : null}
+              {entry.proofNote ? <p className="mt-0 mb-3 text-[15px] leading-relaxed">{entry.proofNote}</p> : null}
+              {entry.proof
+                ? entry.proof.split('\n').map((url) => (
+                    <p key={url} className="mt-0 mb-2 text-[14px]">
+                      <a href={url} target="_blank" rel="noreferrer">
+                        {url}
+                      </a>
+                    </p>
+                  ))
+                : null}
+              {entry.proofImage ? <img src={entry.proofImage} alt="" className="entry-preview" /> : null}
+              {isPoster && entry.status === 'submitted' ? (
+                <button
+                  className="btn-accent mt-4 py-3 px-5"
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => void onPay(entry.hunter)}
+                >
+                  {busy === 'pay'
+                    ? 'Waiting on Nimiq Pay…'
+                    : `Pay hunter in ${bounty.token} · ${money(bounty.rewardMinor, bounty.token)}`}
+                </button>
+              ) : null}
+            </section>
+          )
+        })}
 
         {bounty.hunter ? (
           <section className="mt-6">
@@ -302,14 +316,18 @@ export function BountyDetail() {
 
       <aside className="pool-card">
         <p className="pool-kicker mt-0 mb-2">Total reward pool</p>
-        <p className="pool-amount">{amountNumber(bounty.rewardMinor, bounty.token)}</p>
+        <p className="pool-amount">
+          {amountNumber((BigInt(bounty.rewardMinor) * BigInt(maxWinners)).toString(), bounty.token)}
+        </p>
         <p className="pool-kicker mt-5 mb-2">Token breakdown</p>
         <p className="m-0 flex items-center justify-between text-[15px]">
           <span className="money">{amountNumber(bounty.rewardMinor, bounty.token)}</span>
-          <span className="text-muted">{bounty.token}</span>
+          <span className="text-muted">{bounty.token} each</span>
         </p>
         <p className="pool-kicker mt-5 mb-2">Reward distribution</p>
-        <p className="mt-0 mb-0 text-[15px]">One winner</p>
+        <p className="mt-0 mb-0 text-[15px]">
+          {maxWinners} winner{maxWinners === 1 ? '' : 's'} · {paidWinners}/{maxWinners} paid
+        </p>
 
         <p className="pool-kicker mt-5 mb-2">Time left</p>
         <p className="countdown">{countdownClock(bounty.deadline, now)}</p>
@@ -328,17 +346,14 @@ export function BountyDetail() {
           </button>
         ) : null}
 
-        {hasEntry && ticket.proof ? (
-          <p className="mt-3 mb-0 text-[13px]">
-            Recorded{' '}
-            <a href={ticket.proof} target="_blank" rel="noreferrer">
-              {ticket.proof}
-            </a>
+        {entries.some((entry) => entry.proof) ? (
+          <p className="mt-3 mb-0 text-[13px] text-muted">
+            {entries.length} submission{entries.length === 1 ? '' : 's'} in.
           </p>
         ) : null}
 
-        {ticket.status === 'claimed' && !isHunter && !isPoster ? (
-          <p className="mt-4 mb-0 text-[13px] text-muted">Someone already has this in review. Boost the pool while they work.</p>
+        {openSlots(ticket) <= 0 && !isHunter && !isPoster && status !== 'paid' ? (
+          <p className="mt-4 mb-0 text-[13px] text-muted">All winner slots are filled. Boost the pool while they work.</p>
         ) : null}
 
         {ticket.status === 'submitted' && isHunter && !isPoster ? (
@@ -367,12 +382,23 @@ export function BountyDetail() {
           </div>
         ) : null}
 
-        {canPayNow ? (
-          <button className="btn-accent w-full py-3 mt-5" type="button" disabled={busy !== null} onClick={() => void onPay()}>
+        {canPayNow && unpaidEntries[0] ? (
+          <button
+            className="btn-accent w-full py-3 mt-5"
+            type="button"
+            disabled={busy !== null}
+            onClick={() => void onPay(unpaidEntries[0].hunter)}
+          >
             {busy === 'pay'
               ? 'Waiting on Nimiq Pay…'
               : `Pay hunter in ${bounty.token} · ${money(bounty.rewardMinor, bounty.token)}`}
           </button>
+        ) : null}
+
+        {isAccepting(ticket, now) ? (
+          <p className="mt-3 mb-0 text-[13px] text-muted">
+            {openSlots(ticket)} of {maxWinners} winner slot{maxWinners === 1 ? '' : 's'} open.
+          </p>
         ) : null}
 
         {canBoost ? (

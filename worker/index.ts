@@ -7,11 +7,22 @@ import {
   normalizeWallet,
   sameAddress,
 } from '../shared/address.ts'
-import { canClaim, canPay, canSubmit, isHttpUrl, isProofValue } from '../shared/machine.ts'
+import {
+  canClaim,
+  canPay,
+  canSubmit,
+  isAccepting,
+  isHttpUrl,
+  isProofValue,
+  listEntries,
+  paidCount,
+  winnersMax,
+} from '../shared/machine.ts'
 import { trustMap } from '../shared/trust.ts'
 import type {
   BoardStats,
   Bounty,
+  BountyEntry,
   BountyListTab,
   BountySort,
   Profile,
@@ -59,6 +70,8 @@ type BountyRow = {
   proof_image?: string | null
   demo?: number | null
   proof_type?: string | null
+  winners?: number | null
+  entries?: string | null
 }
 
 const SCHEMA = [
@@ -209,7 +222,43 @@ function mapBounty(row: BountyRow): Bounty {
     proofImage: row.proof_image ?? null,
     demo: Number(row.demo ?? 0) === 1,
     proofType: parseProofType(row.proof_type),
+    winners: Math.max(1, Number(row.winners ?? 1) || 1),
+    entries: parseEntryJson(row.entries),
   }
+}
+
+function parseEntryJson(raw: string | null | undefined): BountyEntry[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw) as BountyEntry[]
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((entry) => entry && typeof entry.hunter === 'string')
+  } catch {
+    return []
+  }
+}
+
+function serializeEntries(entries: BountyEntry[]): string {
+  return JSON.stringify(
+    entries.map((entry) => ({
+      hunter: entry.hunter,
+      proof: entry.proof,
+      proofNote: entry.proofNote,
+      proofImage: entry.proofImage,
+      status: entry.status,
+      txHash: entry.txHash,
+      submittedAt: entry.submittedAt,
+      paidAt: entry.paidAt,
+    })),
+  )
+}
+
+function parseWinners(input: unknown): number {
+  const n = typeof input === 'number' ? input : Number(input ?? 1)
+  if (!Number.isInteger(n) || n < 1 || n > 10) {
+    throw new Error('Number of winners must be between 1 and 10.')
+  }
+  return n
 }
 
 function parseProofType(value: string | null | undefined): ProofType {
@@ -263,11 +312,9 @@ function attachLikes(bounties: Bounty[], counts: Map<string, number>, liked: Set
 
 function computeStats(bounties: Bounty[], clock: number, totalLikes: number): BoardStats {
   return {
-    live: bounties.filter((bounty) => bounty.status === 'open' && bounty.deadline >= clock).length,
-    review: bounties.filter(
-      (bounty) => bounty.status === 'claimed' || bounty.status === 'submitted',
-    ).length,
-    paid: bounties.filter((bounty) => bounty.status === 'paid').length,
+    live: bounties.filter((bounty) => isAccepting(bounty, clock)).length,
+    review: bounties.filter((bounty) => listEntries(bounty).some((entry) => entry.status === 'submitted')).length,
+    paid: bounties.filter((bounty) => paidCount(bounty) >= winnersMax(bounty)).length,
     likes: totalLikes,
   }
 }
@@ -282,6 +329,8 @@ async function ensureSchema(db: D1Database): Promise<void> {
     'proof_image TEXT',
     'demo INTEGER DEFAULT 0',
     'proof_type TEXT',
+    'winners INTEGER DEFAULT 1',
+    'entries TEXT',
   ]) {
     try {
       await db.prepare(`ALTER TABLE bounties ADD COLUMN ${column}`).run()
@@ -319,6 +368,10 @@ function attachProfiles(bounties: Bounty[], profiles: Map<string, Profile>): Bou
     ...bounty,
     posterProfile: profiles.get(likeWalletKey(bounty.poster)) ?? null,
     hunterProfile: bounty.hunter ? (profiles.get(likeWalletKey(bounty.hunter)) ?? null) : null,
+    entries: listEntries(bounty).map((entry) => ({
+      ...entry,
+      hunterProfile: profiles.get(likeWalletKey(entry.hunter)) ?? null,
+    })),
   }))
 }
 
@@ -327,6 +380,7 @@ async function withProfiles(db: D1Database, bounties: Bounty[]): Promise<Bounty[
   for (const bounty of bounties) {
     wallets.push(bounty.poster)
     if (bounty.hunter) wallets.push(bounty.hunter)
+    for (const entry of listEntries(bounty)) wallets.push(entry.hunter)
   }
   return attachProfiles(bounties, await loadProfileMap(db, wallets))
 }
@@ -383,19 +437,21 @@ app.get('/api/bounties', async (c) => {
 
   if (address) {
     bounties = bounties.filter(
-      (bounty) => sameAddress(bounty.poster, address) || (bounty.hunter && sameAddress(bounty.hunter, address)),
+      (bounty) =>
+        sameAddress(bounty.poster, address) ||
+        (bounty.hunter && sameAddress(bounty.hunter, address)) ||
+        listEntries(bounty).some((entry) => sameAddress(entry.hunter, address)),
     )
   } else if (tab === 'open') {
-    bounties = bounties.filter((bounty) => bounty.status === 'open' && bounty.deadline >= clock)
+    bounties = bounties.filter((bounty) => isAccepting(bounty, clock))
   } else if (tab === 'claimed') {
     bounties = bounties.filter(
       (bounty) =>
-        bounty.status === 'claimed' ||
-        bounty.status === 'submitted' ||
-        (bounty.status !== 'paid' && bounty.deadline < clock),
+        listEntries(bounty).some((entry) => entry.status === 'submitted') ||
+        (paidCount(bounty) < winnersMax(bounty) && bounty.deadline < clock),
     )
   } else if (tab === 'paid') {
-    bounties = bounties.filter((bounty) => bounty.status === 'paid')
+    bounties = bounties.filter((bounty) => paidCount(bounty) >= winnersMax(bounty) || bounty.status === 'paid')
   }
 
   const sorted = attachTrust(sortBounties(bounties, sort), all)
@@ -550,6 +606,12 @@ app.post('/api/bounties', async (c) => {
   if (!/^\d+$/.test(rewardMinor) || BigInt(rewardMinor) <= 0n) return jsonError('Reward must be a positive amount.')
   if (!Number.isFinite(deadline) || deadline <= now()) return jsonError('Deadline must be in the future.')
   const proofType = parseProofType(typeof body.proofType === 'string' ? body.proofType : 'any')
+  let winners = 1
+  try {
+    winners = parseWinners(body.winners ?? 1)
+  } catch (error) {
+    return jsonError(error instanceof Error ? error.message : 'Number of winners must be 1–10.')
+  }
 
   const poster = normalizeWallet(token, posterRaw)
   let id = randomId()
@@ -563,10 +625,10 @@ app.post('/api/bounties', async (c) => {
   await c.env.DB.prepare(
     `INSERT INTO bounties (
       id, title, brief, reward_minor, token, deadline, status, poster, hunter, proof, tx_hash,
-      created_at, claimed_at, submitted_at, paid_at, image_url, demo, proof_type
-    ) VALUES (?, ?, ?, ?, ?, ?, 'open', ?, NULL, NULL, NULL, ?, NULL, NULL, NULL, ?, 0, ?)`,
+      created_at, claimed_at, submitted_at, paid_at, image_url, demo, proof_type, winners, entries
+    ) VALUES (?, ?, ?, ?, ?, ?, 'open', ?, NULL, NULL, NULL, ?, NULL, NULL, NULL, ?, 0, ?, ?, '[]')`,
   )
-    .bind(id, title, brief, rewardMinor, token, deadline, poster, createdAt, imageUrl, proofType)
+    .bind(id, title, brief, rewardMinor, token, deadline, poster, createdAt, imageUrl, proofType, winners)
     .run()
 
   const bounty = await getBounty(c.env.DB, id)
@@ -619,6 +681,10 @@ app.post('/api/bounties/:id/claim', async (c) => {
     return jsonError(check.message, check.code === 'already_claimed' ? 409 : 400, check.code)
   }
 
+  if (winnersMax(bounty) > 1) {
+    return c.json({ bounty })
+  }
+
   const result = await c.env.DB.prepare(
     `UPDATE bounties
      SET hunter = ?, status = 'claimed', claimed_at = ?
@@ -668,19 +734,42 @@ app.post('/api/bounties/:id/submit', async (c) => {
 
   const hunter = normalizeWallet(bounty.token, hunterRaw)
   const check = canSubmit(bounty, hunter, isProofValue(proofValue) ? proofValue : `https://board.local/entry`)
-  if (!check.ok) return jsonError(check.message, 400, check.code)
+  if (!check.ok) return jsonError(check.message, check.code === 'already_claimed' ? 409 : 400, check.code)
 
   const clock = now()
+  const entry: BountyEntry = {
+    hunter,
+    proof: proof || null,
+    proofNote: note || null,
+    proofImage: image,
+    status: 'submitted',
+    txHash: null,
+    submittedAt: clock,
+    paidAt: null,
+  }
+  const entries = [...listEntries(bounty), entry]
+  const first = entries[0]
   const result = await c.env.DB.prepare(
     `UPDATE bounties
-     SET proof = ?, proof_note = ?, proof_image = ?, status = 'submitted', submitted_at = ?
-     WHERE id = ? AND status = 'claimed' AND hunter = ?`,
+     SET hunter = ?, proof = ?, proof_note = ?, proof_image = ?, status = 'submitted', submitted_at = ?,
+         claimed_at = COALESCE(claimed_at, ?), entries = ?
+     WHERE id = ? AND status != 'paid' AND deadline >= ?`,
   )
-    .bind(proof || null, note || null, image, clock, id, hunter)
+    .bind(
+      bounty.hunter ?? hunter,
+      first.proof,
+      first.proofNote,
+      first.proofImage,
+      clock,
+      clock,
+      serializeEntries(entries),
+      id,
+      clock,
+    )
     .run()
 
   if (!result.meta?.changes) {
-    return jsonError('Only the hunter who claimed this bounty can submit proof.', 409, 'not_hunter')
+    return jsonError('Could not submit on this bounty.', 409, 'not_hunter')
   }
 
   return c.json({ bounty: await getBounty(c.env.DB, id) })
@@ -702,16 +791,38 @@ app.post('/api/bounties/:id/pay', async (c) => {
   }
 
   const poster = normalizeWallet(bounty.token, posterRaw)
+  const hunterRawPay = typeof body?.hunter === 'string' ? body.hunter : bounty.hunter
   const check = canPay(bounty, poster, txHash)
   if (!check.ok) return jsonError(check.message, 400, check.code)
 
   const clock = now()
+  const entries = listEntries(bounty)
+  const target =
+    hunterRawPay && isValidWallet(bounty.token, hunterRawPay)
+      ? entries.find((entry) => sameAddress(entry.hunter, hunterRawPay) && entry.status === 'submitted')
+      : entries.find((entry) => entry.status === 'submitted')
+  if (!target) return jsonError('No submitted entry to pay.', 400, 'no_proof')
+
+  const nextEntries = entries.map((entry) =>
+    sameAddress(entry.hunter, target.hunter)
+      ? { ...entry, status: 'paid' as const, txHash, paidAt: clock }
+      : entry,
+  )
+  const allPaid = nextEntries.filter((entry) => entry.status === 'paid').length >= winnersMax(bounty)
   const result = await c.env.DB.prepare(
     `UPDATE bounties
-     SET status = 'paid', tx_hash = ?, paid_at = ?
-     WHERE id = ? AND status = 'submitted' AND poster = ? AND hunter IS NOT NULL`,
+     SET status = ?, tx_hash = ?, paid_at = ?, hunter = ?, entries = ?
+     WHERE id = ? AND poster = ? AND status != 'paid'`,
   )
-    .bind(txHash, clock, id, poster)
+    .bind(
+      allPaid ? 'paid' : 'submitted',
+      txHash,
+      clock,
+      target.hunter,
+      serializeEntries(nextEntries),
+      id,
+      poster,
+    )
     .run()
 
   if (!result.meta?.changes) {

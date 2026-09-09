@@ -1,5 +1,6 @@
-import type { Bounty } from '@shared/types.ts'
+import { listEntries, openSlots, winnersMax } from '@shared/machine.ts'
 import { sameAddress } from '@shared/address.ts'
+import type { Bounty } from '@shared/types.ts'
 import { useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useProfile } from '../context/ProfileContext.tsx'
@@ -122,11 +123,16 @@ export function SubmitModal({
         setError('This is your bounty. Connect a different wallet to submit work.')
         return
       }
-      if (bounty.hunter && !sameAddress(hunter, bounty.hunter)) {
-        setError('Someone already claimed this bounty. Only that hunter can submit.')
+      const mine = listEntries(bounty).some((entry) => sameAddress(entry.hunter, hunter))
+      if (mine) {
+        setError('You already submitted on this bounty.')
         return
       }
-      if (bounty.status === 'open') {
+      if (openSlots(bounty) <= 0) {
+        setError('All winner slots are filled.')
+        return
+      }
+      if (winnersMax(bounty) === 1 && bounty.status === 'open') {
         await claimBounty(bounty.id, hunter)
       }
       const next = await submitProof(bounty.id, hunter, cleanLinks.join('\n'), {

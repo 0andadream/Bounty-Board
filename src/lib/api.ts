@@ -103,6 +103,7 @@ export async function postBounty(input: {
   poster: string
   imageUrl?: string | null
   proofType?: Bounty['proofType']
+  winners?: number
 }): Promise<Bounty> {
   const body = await request<{ bounty: Bounty }>('/api/bounties', {
     method: 'POST',
@@ -171,10 +172,11 @@ export async function markPaid(
   poster: string,
   txHash: string,
   asset: Bounty['token'] = 'NIM',
+  hunter?: string,
 ): Promise<Bounty> {
   const body = await request<{ bounty: Bounty }>(`/api/bounties/${id}/pay`, {
     method: 'POST',
-    body: JSON.stringify({ poster, txHash, asset }),
+    body: JSON.stringify({ poster, txHash, asset, hunter }),
   })
   return body.bounty
 }

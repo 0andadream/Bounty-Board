@@ -9,12 +9,12 @@ const EMPTY: BoardStats = { live: 0, review: 0, paid: 0, likes: 0 }
 const STEPS = [
   { n: '01', title: 'Post the spec', body: 'Title, deliverables, duration, and a reward. That spec is the rulebook.' },
   { n: '02', title: 'Hunters submit', body: 'Anyone with a wallet can send proof. You review the entry, not a middleman.' },
-  { n: '03', title: 'Pay the winner', body: 'One hunter. You pay them wallet to wallet. The receipt is the point. No escrow.' },
+  { n: '03', title: 'Pay the winner', body: 'You set how many hunters win. You pay each one wallet to wallet. The receipt is the point. No escrow.' },
 ]
 
 const FEATURES = [
   { title: 'No escrow', body: 'Funds stay in your wallet until you accept the work and send payment.' },
-  { title: 'One winner', body: 'Board pays a single hunter. Boost the pool if you want more heat on the spec.' },
+  { title: 'You pick the winners', body: 'Set 1–10 winners. You pay each hunter wallet-to-wallet. Boost the pool if you want more heat on the spec.' },
   { title: 'NIM first', body: 'Post in NIM on Nimiq Pay. USDT on Polygon is the optional extra. Same board, same receipt.' },
   { title: 'Onchain receipt', body: 'When you pay, the tx hash is the proof. Public, shareable, done.' },
 ]
@@ -26,7 +26,7 @@ const FAQS = [
   },
   {
     q: 'Who decides the winner?',
-    a: 'You do. One hunter can have an entry in review at a time. You check the proof, then pay. There is no moderator payout.',
+    a: 'You do. You set how many hunters can win. You check each proof, then pay that hunter. There is no moderator payout.',
   },
   {
     q: 'How do hunters get paid?',

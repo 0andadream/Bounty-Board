@@ -37,6 +37,7 @@ export function PostBountyModal({ open, onClose }: { open: boolean; onClose: () 
   const [reward, setReward] = useState('2')
   const [token, setToken] = useState<Token>('NIM')
   const [proofType, setProofType] = useState<ProofType>('url')
+  const [winners, setWinners] = useState(1)
   const [dropHot, setDropHot] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -122,6 +123,7 @@ export function PostBountyModal({ open, onClose }: { open: boolean; onClose: () 
         poster,
         imageUrl,
         proofType,
+        winners,
       })
       close()
       navigate(`/b/${bounty.id}`)
@@ -303,11 +305,40 @@ export function PostBountyModal({ open, onClose }: { open: boolean; onClose: () 
               Reward distribution <span className="req">*</span>
             </p>
             <p className="mt-0 mb-3 text-[13px] text-muted">
-              Set how many people can win. Board pays one hunter wallet-to-wallet.
+              How many hunters you will pay. Each winner gets the full reward wallet-to-wallet. There is no escrow.
             </p>
             <div className="winners-row">
               <span>Number of winners:</span>
-              <input className="field winners-field" value="1" readOnly aria-label="Number of winners" />
+              <button
+                type="button"
+                className="winners-step"
+                aria-label="Fewer winners"
+                onClick={() => setWinners((n) => Math.max(1, n - 1))}
+              >
+                −
+              </button>
+              <input
+                className="field winners-field"
+                inputMode="numeric"
+                value={String(winners)}
+                aria-label="Number of winners"
+                onChange={(event) => {
+                  const raw = event.target.value.replace(/[^\d]/g, '')
+                  if (!raw) {
+                    setWinners(1)
+                    return
+                  }
+                  setWinners(Math.min(10, Math.max(1, Number(raw))))
+                }}
+              />
+              <button
+                type="button"
+                className="winners-step"
+                aria-label="More winners"
+                onClick={() => setWinners((n) => Math.min(10, n + 1))}
+              >
+                +
+              </button>
             </div>
 
             <button type="button" className="option-row" onClick={() => setLocOpen((value) => !value)}>
@@ -431,8 +462,9 @@ export function PostBountyModal({ open, onClose }: { open: boolean; onClose: () 
               </label>
             </div>
             <p className="mt-0 mb-4 text-[13px] text-muted">
-              Duration: {DURATIONS.find((item) => item.days === duration)?.label}. Number of winners: 1. Proof:{' '}
-              {proofType}.{location.trim() ? ` Location: ${location.trim()}.` : ''}
+              Duration: {DURATIONS.find((item) => item.days === duration)?.label}. Number of winners: {winners}.
+              Total from you: {String(Number(reward || 0) * winners)} {token}. Proof: {proofType}.
+              {location.trim() ? ` Location: ${location.trim()}.` : ''}
             </p>
             {error ? <ErrorNote message={error} /> : null}
           </div>

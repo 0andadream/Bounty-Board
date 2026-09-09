@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { applyClaim, applyPay, applySubmit, canClaim, canPay, canSubmit, viewStatus } from './machine.ts'
+import { applyClaim, applyPay, applySubmit, canClaim, canPay, canSubmit, openSlots, viewStatus } from './machine.ts'
 import type { Bounty } from './types.ts'
 
 const now = Date.UTC(2026, 8, 5, 12, 0, 0)
@@ -63,6 +63,18 @@ test('only the hunter submits a proof link', () => {
   const submitted = applySubmit(claimed, hunter, 'https://example.com/proof', now)
   assert.equal(submitted.status, 'submitted')
   assert.equal(submitted.proof, 'https://example.com/proof')
+})
+
+test('multiple winner slots stay open until filled', () => {
+  const hunter2 = 'NQ73 106V L6VH J0Y9 141L XMRC 2NJS AJ8S PAB9'
+  const open = bounty({ winners: 2 })
+  const first = applyClaim(open, hunter, now)
+  assert.equal(canClaim(first, hunter2, now).ok, true)
+  const second = applySubmit(first, hunter, 'https://example.com/one', now)
+  assert.equal(canSubmit(second, hunter2, 'https://example.com/two').ok, true)
+  const both = applySubmit(second, hunter2, 'https://example.com/two', now)
+  assert.equal(both.entries?.length, 2)
+  assert.equal(openSlots(both), 0)
 })
 
 test('only the poster can mark paid, and only after proof + a tx hash', () => {
