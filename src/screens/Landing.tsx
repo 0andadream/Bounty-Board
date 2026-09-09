@@ -7,38 +7,62 @@ import { listAllBounties, listBounties } from '../lib/api.ts'
 const EMPTY: BoardStats = { live: 0, review: 0, paid: 0, likes: 0 }
 
 const STEPS = [
-  { n: '01', title: 'Post the spec', body: 'Title, deliverables, duration, and a reward. That spec is the rulebook.' },
-  { n: '02', title: 'Hunters submit', body: 'Anyone with a wallet can send proof. You review the entry, not a middleman.' },
-  { n: '03', title: 'Pay the winner', body: 'You set how many hunters win. You pay each one wallet to wallet. The receipt is the point. No escrow.' },
+  {
+    n: '01',
+    title: 'Post',
+    body: 'Need something done? Write the task, set a NIM reward, and put it on the board.',
+  },
+  {
+    n: '02',
+    title: 'Complete',
+    body: 'Want to earn? Pick a bounty, do the work, and send proof. The poster reviews it.',
+  },
+  {
+    n: '03',
+    title: 'Get paid',
+    body: 'The poster pays from their wallet in NIM. You get the reward. The receipt is the payment.',
+  },
 ]
 
 const FEATURES = [
-  { title: 'No escrow', body: 'Funds stay in your wallet until you accept the work and send payment.' },
-  { title: 'You pick the winners', body: 'Set 1–10 winners. You pay each hunter wallet-to-wallet. Boost the pool if you want more heat on the spec.' },
-  { title: 'NIM first', body: 'Post in NIM on Nimiq Pay. USDT on Polygon is the optional extra. Same board, same receipt.' },
-  { title: 'Onchain receipt', body: 'When you pay, the tx hash is the proof. Public, shareable, done.' },
+  {
+    title: 'Two sides, one board',
+    body: 'Post a task you need done, or browse open bounties and earn. Same board, same payment.',
+  },
+  {
+    title: 'Paid in NIM',
+    body: 'Every bounty has a NIM reward. When the work is accepted, payment goes wallet to wallet in Nimiq Pay.',
+  },
+  {
+    title: 'You pay when it’s done',
+    body: 'The reward stays in your wallet until you accept the work and send it. Board never holds the money.',
+  },
+  {
+    title: 'A receipt you can keep',
+    body: 'Each payment records who posted, who did the work, the amount, and the transaction. Screenshot it and you’re done.',
+  },
 ]
 
 const FAQS = [
   {
-    q: 'Is there escrow?',
-    a: 'No. You post the bounty, hunters submit work, and you pay the winner from your wallet. Board never holds the reward.',
+    q: 'What is Bounty Board?',
+    a: 'A board for two kinds of people: those who need a task done, and those who want to earn NIM for doing it. Post a bounty or pick one up.',
   },
   {
-    q: 'Who decides the winner?',
-    a: 'You do. You set how many hunters can win. You check each proof, then pay that hunter. There is no moderator payout.',
+    q: 'How do I post a task?',
+    a: 'Write what you need, set a NIM reward, and publish. People send proof. You review it, then pay from your wallet.',
   },
   {
-    q: 'How do hunters get paid?',
-    a: 'Directly. The poster sends NIM or USDT to the hunter wallet. Board stores the transaction hash as the receipt.',
+    q: 'How do I earn?',
+    a: 'Open the board, choose a bounty, complete the work, and submit proof. When the poster accepts it, they pay you in NIM.',
   },
   {
-    q: 'What wallets work?',
-    a: 'Nimiq Hub or Nimiq Pay for NIM. An EVM wallet on Polygon for USDT. Connect once and post, hunt, or pay.',
+    q: 'Does Board hold the money?',
+    a: 'No. Funds stay in the poster\'s wallet until they pay. There is no escrow and no middleman payout.',
   },
   {
     q: 'What if nobody finishes?',
-    a: 'The bounty expires. Nothing is locked. Repost it, change the spec, or raise the reward.',
+    a: 'The bounty expires. Nothing is locked. Repost it, change the task, or raise the reward.',
   },
 ]
 
@@ -78,21 +102,26 @@ export function Landing() {
       </header>
 
       <section className="land-hero">
-        <p className="land-eyebrow">Pay anyone to do anything</p>
+        <p className="land-eyebrow">Need it done. Want to earn.</p>
         <h1>
-          Get the work
-          <em> done.</em>
+          Get things done.
+          <em> Get paid in NIM.</em>
         </h1>
         <p className="land-lead">
-          Post a bounty. One hunter ships it. You pay them wallet to wallet. No escrow, no committee,
-          just a spec and a receipt.
+          Post a task with a reward, or pick up a bounty and earn for your work. Bounty Board turns
+          everyday tasks into earning opportunities with Nimiq.
         </p>
-        <p className="land-sub">NIM in Nimiq Pay. No escrow. The receipt is the tx.</p>
+        <p className="land-sub">
+          From bug reports and design work to research and community tasks — if it needs doing, put a
+          bounty on it.
+        </p>
         <div className="land-cta">
-          <Link to="/bounties" className="btn-accent land-cta-main no-underline">
-            Open board
+          <Link to="/bounties?create=1" className="btn-accent land-cta-main no-underline">
+            Post a Bounty
           </Link>
-          <OpenInNimiqPay className="btn-ghost land-cta-main no-underline" />
+          <Link to="/bounties" className="btn-ghost land-cta-main no-underline">
+            Find a Bounty
+          </Link>
         </div>
       </section>
 
@@ -139,8 +168,8 @@ export function Landing() {
       <section className="land-steps">
         <p className="land-kicker">How it works</p>
         <h2>
-          Post small.
-          <em> Pay once.</em>
+          Post. Complete.
+          <em> Get paid.</em>
         </h2>
         <div className="land-step-grid">
           {STEPS.map((step) => (
@@ -156,8 +185,8 @@ export function Landing() {
       <section className="land-features">
         <p className="land-kicker">Why Board</p>
         <h2>
-          No vault.
-          <em> Just payment.</em>
+          Need it done.
+          <em> Want to earn.</em>
         </h2>
         <div className="land-feature-grid">
           {FEATURES.map((item) => (
@@ -195,13 +224,16 @@ export function Landing() {
 
       <section className="land-end">
         <h2>
-          Ready when
-          <em> you are.</em>
+          Post a task.
+          <em> Or pick one up.</em>
         </h2>
-        <p>Open the board, post a spec, or hunt what’s already live.</p>
+        <p>Someone needs something done. Someone else wants to earn. Start on either side.</p>
         <div className="land-cta">
-          <Link to="/bounties" className="btn-accent land-cta-main no-underline">
-            Open board
+          <Link to="/bounties?create=1" className="btn-accent land-cta-main no-underline">
+            Post a Bounty
+          </Link>
+          <Link to="/bounties" className="btn-ghost land-cta-main no-underline">
+            Find a Bounty
           </Link>
           <OpenInNimiqPay className="btn-ghost land-cta-main no-underline" />
         </div>

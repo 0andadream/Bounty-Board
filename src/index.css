@@ -2492,7 +2492,7 @@ a {
 }
 
 .land-lead {
-  max-width: 560px;
+  max-width: 640px;
   margin: 22px auto 0;
   font-size: 18px;
   line-height: 1.5;
@@ -2500,9 +2500,10 @@ a {
 }
 
 .land-sub {
-  max-width: 560px;
-  margin: 10px auto 0;
+  max-width: 640px;
+  margin: 14px auto 0;
   font-size: 14px;
+  line-height: 1.5;
   color: #d8ff3e;
 }
 
