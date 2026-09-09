@@ -123,7 +123,7 @@ For testnet NIM without spending mainnet funds: in Nimiq Pay, long-press Setting
 |---|---|
 | `VITE_API_URL` | Worker origin. Leave empty in local dev (Vite proxy). Set in production if the UI is hosted separately. |
 | `VITE_APP_URL` | Public Mini App origin used on receipts and share links. |
-| `SEED_BOUNTIES` | Worker var. Default `true`. Inserts 5 live NIM demo bounties when D1 is empty. Set `false` to disable. |
+| `SEED_BOUNTIES` | Worker var. Currently `false`. Set `true` to insert 5 live NIM demo bounties when D1 is empty. |
 
 The Worker does not need API secrets. Demo poster wallet (documented): `NQ30 A7HU XB26 K9H2 QFHT MB58 A0G1 DEXQ CSG5`. Pay still goes to the hunter when a poster pays.
 
