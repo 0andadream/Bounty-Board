@@ -1,3 +1,4 @@
+import { likeWalletKey } from '@shared/address.ts'
 import type { Profile } from '@shared/types.ts'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { getProfileByWallet, saveProfile as postProfile } from '../lib/api.ts'
@@ -6,6 +7,7 @@ import { useWallet } from './WalletContext.tsx'
 type ProfileContextValue = {
   me: Profile | null
   wallet: string | null
+  ready: boolean
   save: (input: {
     username: string
     avatarUrl: string | null
@@ -16,33 +18,86 @@ type ProfileContextValue = {
   refresh: () => Promise<void>
 }
 
+const CACHE_KEY = 'board.profile'
 const ProfileContext = createContext<ProfileContextValue | null>(null)
+
+function readCache(): { key: string; profile: Profile } | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY) ?? sessionStorage.getItem(CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { key?: string; profile?: Profile }
+    if (!parsed.key || !parsed.profile?.username) return null
+    return { key: parsed.key, profile: parsed.profile }
+  } catch {
+    return null
+  }
+}
+
+function writeCache(wallet: string, profile: Profile) {
+  const payload = JSON.stringify({ key: likeWalletKey(wallet), profile })
+  try {
+    localStorage.setItem(CACHE_KEY, payload)
+  } catch {
+    // Mini App WebViews can block localStorage
+  }
+  try {
+    sessionStorage.setItem(CACHE_KEY, payload)
+  } catch {
+    // ignore
+  }
+}
+
+function clearCache() {
+  try {
+    localStorage.removeItem(CACHE_KEY)
+  } catch {
+    // ignore
+  }
+  try {
+    sessionStorage.removeItem(CACHE_KEY)
+  } catch {
+    // ignore
+  }
+}
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const wallet = useWallet()
   const walletId = wallet.nimiqAddress ?? wallet.ethAddress
-  const [me, setMe] = useState<Profile | null>(null)
+  const cached = readCache()
+  const [me, setMe] = useState<Profile | null>(() => cached?.profile ?? null)
+  const [ready, setReady] = useState(false)
 
   const refresh = useCallback(async () => {
-    if (!walletId) {
-      setMe(null)
+    const candidates = [wallet.nimiqAddress, wallet.ethAddress].filter((value): value is string => Boolean(value))
+    if (candidates.length === 0) {
+      if (wallet.status === 'connecting') return
+      if (wallet.status !== 'disconnected') return
+      setReady(true)
       return
     }
     try {
-      const profile = await getProfileByWallet(walletId)
-      if (profile) {
-        setMe(profile)
-        return
+      for (const id of candidates) {
+        const profile = await getProfileByWallet(id)
+        if (profile) {
+          setMe(profile)
+          writeCache(id, profile)
+          setReady(true)
+          return
+        }
       }
-      if (wallet.ethAddress && wallet.ethAddress !== walletId) {
-        setMe(await getProfileByWallet(wallet.ethAddress))
-        return
+      const hit = readCache()
+      if (hit && candidates.some((id) => likeWalletKey(id) === hit.key)) {
+        setMe(hit.profile)
+      } else {
+        setMe(null)
       }
-      setMe(null)
     } catch {
-      setMe(null)
+      const hit = readCache()
+      if (hit && candidates.some((id) => likeWalletKey(id) === hit.key)) setMe(hit.profile)
+    } finally {
+      setReady(true)
     }
-  }, [walletId, wallet.ethAddress])
+  }, [wallet.nimiqAddress, wallet.ethAddress, wallet.status])
 
   useEffect(() => {
     void refresh()
@@ -56,17 +111,29 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       location?: string | null
       skills?: string | null
     }) => {
-      if (!walletId) throw new Error('Connect a wallet to set a profile.')
-      const next = await postProfile({ wallet: walletId, ...input })
+      const id = wallet.nimiqAddress ?? wallet.ethAddress
+      if (!id) throw new Error('Connect a wallet to set a profile.')
+      const next = await postProfile({ wallet: id, ...input })
       setMe(next)
+      writeCache(id, next)
       return next
     },
-    [walletId],
+    [wallet.nimiqAddress, wallet.ethAddress],
   )
 
+  useEffect(() => {
+    if (wallet.status === 'disconnected' && !wallet.nimiqAddress && !wallet.ethAddress) {
+      const hit = readCache()
+      if (!hit) {
+        setMe(null)
+        clearCache()
+      }
+    }
+  }, [wallet.status, wallet.nimiqAddress, wallet.ethAddress])
+
   const value = useMemo<ProfileContextValue>(
-    () => ({ me, wallet: walletId, save, refresh }),
-    [me, walletId, save, refresh],
+    () => ({ me, wallet: walletId, ready, save, refresh }),
+    [me, walletId, ready, save, refresh],
   )
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>

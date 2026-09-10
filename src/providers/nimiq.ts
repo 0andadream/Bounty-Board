@@ -45,7 +45,10 @@ export async function listNimiqAccounts(): Promise<string[]> {
   if (!Array.isArray(result) || result.length === 0) {
     throw new AppError('wallet_disconnected', 'No Nimiq account is available in this wallet.', true)
   }
-  return result.filter((address) => isValidNimiqAddress(address)).map(formatNimiqAddress)
+  return result
+    .filter((address): address is string => typeof address === 'string')
+    .map((address) => formatNimiqAddress(address))
+    .filter((address) => isValidNimiqAddress(address))
 }
 
 export async function readNimiqNetwork(): Promise<{ consensus: boolean; blockNumber: number }> {

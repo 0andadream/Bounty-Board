@@ -18,9 +18,18 @@ function RootRoute() {
   const [inPay, setInPay] = useState(() => shouldUseMiniApp())
 
   useEffect(() => {
-    if (!shouldUseMiniApp()) return
-    setInPay(true)
-    navigate('/bounties', { replace: true })
+    let tries = 0
+    let timer = 0
+    function check() {
+      if (shouldUseMiniApp()) {
+        setInPay(true)
+        navigate('/bounties', { replace: true })
+        return
+      }
+      if (tries++ < 50) timer = window.setTimeout(check, 100)
+    }
+    check()
+    return () => window.clearTimeout(timer)
   }, [navigate])
 
   if (inPay) return <Navigate to="/bounties" replace />

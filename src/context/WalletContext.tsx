@@ -120,29 +120,47 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (!shouldUseMiniApp()) return
     let ignore = false
-    void (async () => {
+    let timer = 0
+    let tries = 0
+
+    async function boot() {
+      if (!shouldUseMiniApp()) {
+        if (tries++ < 50 && !ignore) {
+          timer = window.setTimeout(() => void boot(), 100)
+        }
+        return
+      }
+      setInsideNimiqPay(true)
       setStatus('connecting')
       try {
         const accounts = await listNimiqAccounts()
         const address = accounts[0]
         if (!address || ignore) return
         setNimiqAddress(address)
-        setInsideNimiqPay(true)
         setStatus('connected')
         saveStored(address, loadStored().eth)
-        const network = await readNimiqNetwork()
-        if (!ignore) {
-          setConsensus(network.consensus)
-          setBlockNumber(network.blockNumber)
+        try {
+          const network = await readNimiqNetwork()
+          if (!ignore) {
+            setConsensus(network.consensus)
+            setBlockNumber(network.blockNumber)
+          }
+        } catch {
+          if (!ignore) {
+            setConsensus(null)
+            setBlockNumber(null)
+          }
         }
       } catch {
-        if (!ignore) setStatus('disconnected')
+        if (!ignore) setStatus(loadStored().nimiq ? 'connected' : 'disconnected')
       }
-    })()
+    }
+
+    void boot()
     return () => {
       ignore = true
+      window.clearTimeout(timer)
     }
   }, [])
 

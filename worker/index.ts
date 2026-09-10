@@ -487,9 +487,12 @@ app.get('/api/profiles', async (c) => {
   }
 
   if (walletRaw) {
-    if (!isLikeWallet(walletRaw)) return jsonError('Connect a wallet first.')
+    const key = likeWalletKey(walletRaw)
+    if (!isLikeWallet(walletRaw) && !isLikeWallet(key)) {
+      return jsonError('Connect a wallet first.')
+    }
     const row = await c.env.DB.prepare('SELECT * FROM profiles WHERE wallet = ?')
-      .bind(likeWalletKey(walletRaw))
+      .bind(key)
       .first<ProfileRow>()
     return c.json({ profile: row ? mapProfile(row) : null })
   }

@@ -31,13 +31,24 @@ export function ProfileScreen() {
   const addresses = [wallet.nimiqAddress, wallet.ethAddress].filter((value): value is string => Boolean(value))
 
   useEffect(() => {
-    setUsername(profile.me?.username ?? '')
-    setAvatarUrl(profile.me?.avatarUrl ?? null)
-    setCoverUrl(profile.me?.coverUrl ?? null)
-    setLocation(profile.me?.location ?? '')
-    setSkills(profile.me?.skills ?? '')
-    if (!profile.me) setEditing(true)
-  }, [profile.me])
+    if (profile.me) {
+      setUsername(profile.me.username)
+      setAvatarUrl(profile.me.avatarUrl)
+      setCoverUrl(profile.me.coverUrl)
+      setLocation(profile.me.location ?? '')
+      setSkills(profile.me.skills ?? '')
+      setEditing(false)
+      return
+    }
+    if (!profile.ready) return
+    if (wallet.status === 'connecting') return
+    setUsername('')
+    setAvatarUrl(null)
+    setCoverUrl(null)
+    setLocation('')
+    setSkills('')
+    setEditing(true)
+  }, [profile.me, profile.ready, wallet.status])
 
   useEffect(() => {
     if (addresses.length === 0) {
