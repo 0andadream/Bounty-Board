@@ -1,49 +1,81 @@
-# Board
+# Bounty Board
 
-**Post a task. Pay wallet to wallet. Keep the receipt.**
+[![Live](https://img.shields.io/badge/live-bounty--board.mattt--dreamer.workers.dev-d8ff3e)](https://bounty-board.mattt-dreamer.workers.dev/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![NIM](https://img.shields.io/badge/pay-NIM%20%2B%20USDT-111111)](https://nimiq.dev/mini-apps)
+[![Competition](https://img.shields.io/badge/Nimiq-Mini%20Apps%20Cycle%20II-7828E8)](https://miniappscompetition.com/)
 
-Board is a bounty board that runs as a [Nimiq Pay Mini App](https://nimiq.dev/mini-apps/). Someone posts a task and a reward in **NIM** or **USDT on Polygon**. One hunter submits proof, and the poster pays them directly from their wallet. There is no escrow, no dispute court, and no bidding.
+**Live product: [bounty-board.mattt-dreamer.workers.dev](https://bounty-board.mattt-dreamer.workers.dev/)** — a two-sided bounty board inside [Nimiq Pay](https://nimiq.dev/mini-apps/).
 
-The receipt — poster, hunter, task, amount, tx hash — is the product. It is meant to be screenshotted and shared.
+Someone needs a task done. Someone else wants to earn. You post a spec with a **NIM** reward (USDT on Polygon is optional). A hunter submits proof. You pay them **wallet to wallet**. Board never holds the money. The receipt is the transaction hash.
 
-Built for the [Nimiq Mini Apps Competition](https://miniappscompetition.com/).
-
-## Why it exists
-
-Most bounty boards either custody funds or live in a chat thread with no proof of payment. Board does neither. Nimiq Pay already holds the keys. Board holds the ticket: who posted, who submitted, what was promised, and the hash that proves the poster paid.
-
-## Core user flow
-
-1. Open Board inside Nimiq Pay. The Mini App lands on the board, not the marketing page.
-2. Wallet connects via `listAccounts()` (native confirmation).
-3. Poster writes a title, summary, deliverables, NIM reward (USDT is optional), proof type, and duration.
-4. A hunter taps **Submit work** and sends proof (links, notes, or a photo).
-5. Poster reviews the entry, then taps **Pay hunter in NIM**. Nimiq Pay shows the native confirmation.
-6. NIM payments attach memo `BOUNTY:<id>:PAID`. USDT payments go to Polygon USDT.
-7. Board records paid **only** after the wallet returns a transaction hash.
-8. Receipt screen: paid stamp, both wallets, hash, timestamp, share.
-
-If the wallet rejects, the network fails, or no hash comes back, the bounty stays submitted. Retry is available.
-
-Expired tickets are not auto-reverted. The poster reposts.
-
-## Architecture
+This is **not** an escrow board and **not** a chat thread. Nimiq Pay already holds the keys. Board holds the ticket: who posted, who submitted, what was promised, and the hash that proves they got paid.
 
 ```
-Nimiq Pay WebView
-  └── Board (Vite + React + TypeScript)
-        ├── src/providers/nimiq.ts   → ONLY file that imports @nimiq/mini-app-sdk
-        ├── src/providers/usdt.ts    → window.ethereum, USDT on Polygon
-        ├── shared/machine.ts        → open → claimed → submitted → paid (+ expired view)
-        └── Cloudflare Worker + D1
-              └── shared bounties (not localStorage)
+post a bounty → submit proof → pay in NIM → keep the receipt
 ```
 
-- **Frontend:** Vite, React, TypeScript, Tailwind. Mobile-first, 430px frame on desktop.
-- **Backend:** Cloudflare Worker (Hono) + D1. Canonical shared state so a poster on one phone and a hunter on another see the same ticket.
-- **No custody:** the Worker stores wallet addresses, task text, reward, deadline, status, proof URL, and tx hash. No emails, no uploaded files, no private keys.
+Open in Nimiq Pay:
 
-### Confirmed NIM API (from `@nimiq/mini-app-sdk` + official provider reference)
+```
+nimiqpay://miniapp?url=bounty-board.mattt-dreamer.workers.dev
+https://nimpay.app/miniapps/open/bounty-board.mattt-dreamer.workers.dev
+```
+
+---
+
+## What it actually does
+
+1. **Open the Mini App.** On the web, `/` is the landing page. Inside Nimiq Pay, `/` redirects to `/bounties`. The wallet connects with `listAccounts()` (native confirmation). On desktop, Connect opens [Nimiq Hub](https://nimiq.github.io/hub/).
+2. **Post a bounty** (`/bounties?create=1`). Title, spec, proof type (text / URL / image), duration, **1–10 winners**, reward in NIM (default) or USDT. Each winner is paid that reward from your wallet. No escrow.
+3. **Find a bounty.** Open tickets live on `/bounties`. Highest-reward rail, Open / Submissions / Paid tabs.
+4. **Submit work.** First-come slots. Proof is a note, links, and up to **4 photos**. Claim + submit is one action in the UI.
+5. **Pay hunter in NIM.** Poster-only. Nimiq Pay / Hub confirms. NIM sends with memo `BOUNTY:<id>:PAID` via `sendBasicTransactionWithData`. USDT uses Polygon `eth_sendTransaction`. **No hash, not paid.**
+6. **Receipt** at `/b/:id/receipt`. Poster, hunter(s), amount, asset, timestamp, explorer link. Meant to be screenshotted.
+
+If the wallet rejects, the network fails, or no hash comes back, the bounty stays submitted. Retry is available. Expired tickets are not auto-reverted. The poster reposts.
+
+---
+
+## Current routes
+
+Verified against `src/App.tsx`.
+
+| URL | Code | Purpose |
+|---|---|---|
+| [`/`](https://bounty-board.mattt-dreamer.workers.dev/) | `src/screens/Landing.tsx` | Landing (web). Mini App redirects to `/bounties`. |
+| [`/bounties`](https://bounty-board.mattt-dreamer.workers.dev/bounties) | `src/screens/Board.tsx` | The board. Feed, create modal, rail. |
+| [`/bounties?create=1`](https://bounty-board.mattt-dreamer.workers.dev/bounties?create=1) | `PostBountyModal` | Create bounty. |
+| [`/b/:id`](https://bounty-board.mattt-dreamer.workers.dev/bounties) | `src/screens/BountyDetail.tsx` | Brief, submissions feed, pay. |
+| [`/b/:id/receipt`](https://bounty-board.mattt-dreamer.workers.dev/) | `src/screens/Receipt.tsx` | Paid receipt. |
+| [`/mine`](https://bounty-board.mattt-dreamer.workers.dev/mine) | `src/screens/MyWork.tsx` | My bounties / my submissions. |
+| [`/profile`](https://bounty-board.mattt-dreamer.workers.dev/profile) | `src/screens/Profile.tsx` | Wallet profile (username, photo). |
+| [`/u/:username`](https://bounty-board.mattt-dreamer.workers.dev/) | `src/screens/PublicProfile.tsx` | Public profile + poster trust. |
+| [`/probe`](https://bounty-board.mattt-dreamer.workers.dev/probe) | `src/screens/Probe.tsx` | Official 3-request Pay provider check. |
+| `/board` | redirect | → `/bounties` |
+| `/new` | redirect | → `/bounties?create=1` |
+
+---
+
+## Why no escrow
+
+Most bounty products either custody funds or live in DMs with no proof of payment. Board does neither.
+
+Trust without a vault, on every bounty and profile:
+
+- bounties posted
+- paid / completed
+- unpaid after submit
+- settled NIM and USDT
+- likes
+
+Pay-on-approve is the entire payment surface. The substitute for escrow is the **receipt**.
+
+---
+
+## Nimiq Pay integration
+
+`src/providers/nimiq.ts` is the **only** file that imports `@nimiq/mini-app-sdk`.
 
 Used:
 
@@ -57,32 +89,65 @@ Used:
 
 Not used, because they are not on the Mini App provider:
 
-- `getTransactionsByAddress()` — not exposed. Payment proof is the hash returned by `sendBasicTransactionWithData`.
+- `getTransactionsByAddress()` — payment proof is the hash returned by `sendBasicTransactionWithData`.
 
-Staking methods exist on the provider. Board does not call them.
+Desktop uses Hub (`chooseAddress` + `checkout`) when `window.nimiq` is missing. USDT uses EIP-1193 `window.ethereum` on Polygon (`0xc2132D05D31c914a87C6611C10748AEb04B58e8F`). ERC-20 transfers cannot carry `BOUNTY:<id>:PAID`; the receipt still stores the Polygon hash.
 
-USDT uses standard EIP-1193 `window.ethereum` calls (`eth_requestAccounts`, `wallet_switchEthereumChain`, `eth_call`, `eth_sendTransaction`) against Polygon USDT `0xc2132D05D31c914a87C6611C10748AEb04B58e8F`. ERC-20 transfers cannot carry a text memo; the receipt still stores the Polygon tx hash.
+---
 
-## Screens
+## Architecture
 
-| Route | Screen |
+```
+Nimiq Pay WebView  (or desktop + Hub)
+  └── Vite + React + TypeScript
+        ├── src/providers/nimiq.ts   → Mini App SDK only
+        ├── src/providers/hub.ts     → desktop connect / pay
+        ├── src/providers/usdt.ts    → Polygon USDT
+        ├── shared/machine.ts        → open → claimed → submitted → paid
+        └── Cloudflare Worker + D1
+              └── shared board (not localStorage)
+```
+
+| Object | Role |
 |---|---|
-| `/` | Landing (web). Inside Nimiq Pay this redirects to `/bounties`. |
-| `/bounties` | Board — feed, create modal, highest-reward rail |
-| `/bounties?create=1` | Opens **Create bounty** |
-| `/b/:id` | Bounty detail — brief, submit work, Pay (poster wallet) |
-| `/mine` | Mine — my bounties and my submissions |
-| `/profile` | Profile setup |
-| `/u/:username` | Public profile |
-| `/b/:id/receipt` | Receipt — paid stamp, hash, share |
-| `/probe` | Official 3-request provider check |
+| `shared/machine.ts` | Claim / submit / pay rules. No I/O. |
+| `shared/trust.ts` | Poster paid/completed/settled counts. |
+| `worker/index.ts` | Hono API, D1, seed flag. |
+| `src/providers/pay.ts` | NIM send + Hub fallback. |
+| `src/screens/Receipt.tsx` | Shareable paid ticket. |
+
+State lives on D1 so two phones see the same board. Profiles are keyed to the wallet (`likeWalletKey`), cached locally so a username survives leaving the Mini App.
+
+---
+
+## State machine
+
+Stored: `open → claimed → submitted → paid`.
+
+`expired` is a **view** when `now > deadline` and not all winners are paid. The row is not mutated back to open.
+
+**Submit work** is one UI action: it takes a first-come slot, then writes proof. `claimed` is the hold if proof write fails after claim.
+
+You set **1–10 winners**. Reward is **per winner**. Poster pays each accepted hunter separately. The bounty stays open until those slots are filled or paid.
+
+Rules in `shared/machine.ts`:
+
+- Slots are first-come. Poster cannot take their own.
+- Only the poster marks paid, and only after proof **and** a real tx hash.
+- Pay is not recorded if the wallet rejects or returns no hash.
+
+```bash
+npm test          # shared/machine.test.ts + shared/trust.test.ts
+```
+
+---
 
 ## Local development
 
-Requirements: Node.js 18+.
+Node 18+.
 
 ```bash
-cd Board
+git clone https://github.com/0andadream/Bounty-Board.git && cd Bounty-Board
 npm install
 cp .env.example .env
 npm run dev
@@ -91,13 +156,14 @@ npm run dev
 This starts:
 
 - Vite at `http://localhost:5174` (also on your LAN IP)
-- Cloudflare Worker + local D1 at `http://127.0.0.1:8788`
+- Worker + local D1 at `http://127.0.0.1:8788`
 
 Vite proxies `/api` to the Worker.
 
 ```bash
-npm test          # pure state-machine tests
+npm test
 npm run build
+npm run deploy          # build + wrangler deploy
 ```
 
 ### Load inside Nimiq Pay
@@ -105,88 +171,57 @@ npm run build
 Follow [Load a local Mini App](https://nimiq.dev/mini-apps/development/load-local-mini-app):
 
 1. Phone and computer on the same Wi-Fi.
-2. `npm run dev` — note the **Network** URL, e.g. `http://192.168.1.42:5174`.
+2. `npm run dev` — Network URL, e.g. `http://192.168.1.42:5174`.
 3. Nimiq Pay → Mini Apps → Custom URL → that address.
-4. Open `/probe` first. Tap **Run 3 requests**. `listAccounts()` must return a real address before anything else matters.
+4. Open `/probe`. Tap **Run 3 requests**. `listAccounts()` must return a real address before anything else matters.
 
-On **desktop**, Board uses [Nimiq Hub](https://nimiq.github.io/hub/) (`chooseAddress` + `checkout`) so you can connect and pay in a browser popup. You do not need Nimiq Pay for that path.
+Testnet NIM: in Nimiq Pay, long-press Settings for 10 seconds, switch to Testnet, **Get free NIM**.
 
-Inside **Nimiq Pay**, Board still uses `@nimiq/mini-app-sdk` (`listAccounts`, `sendBasicTransactionWithData`).
-
-`listAccounts()` only exists in the Mini App WebView. Desktop Connect opens Hub instead.
-
-For testnet NIM without spending mainnet funds: in Nimiq Pay, long-press Settings for 10 seconds and switch to Testnet. The empty-state home screen has **Get free NIM**.
-
-## Environment variables
+### Environment
 
 | Variable | Purpose |
 |---|---|
-| `VITE_API_URL` | Worker origin. Leave empty in local dev (Vite proxy). Set in production if the UI is hosted separately. |
-| `VITE_APP_URL` | Public Mini App origin used on receipts and share links. |
-| `SEED_BOUNTIES` | Worker var. Currently `false`. Set `true` to insert 5 live NIM demo bounties when D1 is empty. |
+| `VITE_API_URL` | Worker origin. Empty in local dev (Vite proxy). |
+| `VITE_APP_URL` | Public origin for receipts and share links. |
+| `SEED_BOUNTIES` | Worker var. `false` in production. `true` inserts 5 demo NIM bounties when D1 is empty. |
 
-The Worker does not need API secrets. Demo poster wallet (documented): `NQ30 A7HU XB26 K9H2 QFHT MB58 A0G1 DEXQ CSG5`. Pay still goes to the hunter when a poster pays.
+No API secrets. The Worker does not hold keys.
 
-Open in Nimiq Pay:
-
-```
-nimiqpay://miniapp?url=bounty-board.mattt-dreamer.workers.dev
-https://nimpay.app/miniapps/open/bounty-board.mattt-dreamer.workers.dev
-```
-
-## Backend setup
-
-Local D1 is created by `wrangler dev`. Schema is applied on first API request.
-
-Remote:
+Remote D1 is already bound in `wrangler.toml` for this account. Schema is applied on first API request (`ensureSchema`).
 
 ```bash
 npx wrangler login
-npx wrangler d1 create board
-```
-
-Put the database id in `wrangler.toml` (already set for this account). Then:
-
-```bash
 npm run db:migrate:remote
 npm run deploy
 ```
 
-That ships the Worker, D1, and the Vite `dist/` as static assets on the same origin. `/api` hits the Worker; everything else is the Mini App.
+Cloudflare Git deploy: set **Build command** to `npm run build` so `./dist` exists for `[assets]`.
 
-If you deploy from the Cloudflare Git dashboard, set **Build command** to `npm run build` so `./dist` exists before Wrangler uploads assets. Leave `VITE_API_URL` empty when UI and API share that origin.
+---
 
-Live: https://bounty-board.mattt-dreamer.workers.dev
+## Honesty
 
-Share the Mini App with:
+- **No escrow.** If the poster never pays, Board cannot move funds.
+- **No hash, not paid.** A rejected wallet leaves the bounty submitted.
+- **NIM memo is the on-chain receipt.** USDT on Polygon cannot carry that memo.
+- **Proof is a note, links, and photos.** Videos and PDFs go behind a URL.
+- **Seed is off** on production. The board is whatever people post.
+- Desktop Hub and Nimiq Pay are different surfaces. Same board, different connect path.
 
-```
-nimiqpay://miniapp?url=your-app.com
-https://nimpay.app/miniapps/open/your-app.com
-```
+---
 
-## State machine
+## Attribution
 
-Stored statuses: `open → claimed → submitted → paid`.
+**Wallets and NIM pay** — [Nimiq Pay Mini Apps](https://nimiq.dev/mini-apps), [Nimiq Hub](https://nimiq.github.io/hub/).
 
-`expired` is a **view** status when `now > deadline` and the bounty is not paid. The row is not mutated back to open. The poster posts a new ticket.
+**USDT** — Polygon USDT via `window.ethereum`.
 
-**Submit work** is one action in the UI: it claims first-come, then writes the proof. `claimed` is the in-review hold if the proof write fails after claim.
+**App** — Vite, React, TypeScript, Tailwind, Cloudflare Worker + D1, Hono.
 
-Rules in `shared/machine.ts` (no I/O):
+Built for the [Nimiq Mini Apps Competition](https://miniappscompetition.com/), Cycle II.
 
-- One hunter. Claim is an atomic SQL `UPDATE … WHERE status = 'open' AND hunter IS NULL`.
-- Only that hunter can submit proof.
-- Only the poster can mark paid, and only after proof + a real tx hash.
-- Pay is not recorded if the wallet rejects or returns no hash.
-
-## Known limitations
-
-- No escrow. Pay-on-approve is the entire Mini App payment surface.
-- USDT transfers cannot attach `BOUNTY:<id>:PAID`. NIM transfers can.
-- Proof is a URL (plus an optional photo). Videos and PDFs go behind a link.
-- Inside Nimiq Pay, accounts come from `listAccounts()`. On desktop, Connect opens Nimiq Hub.
+---
 
 ## License
 
-MIT
+MIT. See [LICENSE](./LICENSE).
