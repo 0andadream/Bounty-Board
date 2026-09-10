@@ -367,6 +367,14 @@ a {
   border-radius: 10px;
 }
 
+.drop-thumb {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+}
+
 .req {
   color: #fb7185;
 }
@@ -881,6 +889,119 @@ a {
   object-fit: contain;
   border-radius: 12px;
   background: #0c0c10;
+}
+
+.brief-box {
+  background: #16161c;
+  border: 1px solid #ffffff14;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+}
+
+.sub-feed {
+  margin-top: 8px;
+}
+
+.sub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  border-bottom: 1px solid #ffffff14;
+  margin-bottom: 16px;
+}
+
+.sub-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #9a9a92;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 0 12px;
+  cursor: pointer;
+}
+
+.sub-tab.on {
+  color: #f4f4ef;
+  border-bottom-color: #d8ff3e;
+}
+
+.sub-tab span {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #ffffff14;
+  font-size: 12px;
+  text-align: center;
+}
+
+.sub-list {
+  display: grid;
+  gap: 14px;
+}
+
+.sub-card {
+  background: #16161c;
+  border: 1px solid #ffffff14;
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.sub-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sub-pill {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #ffffff22;
+  color: #9a9a92;
+}
+
+.sub-pill.win {
+  color: #d8ff3e;
+  border-color: #d8ff3e55;
+}
+
+.sub-note {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.sub-gallery {
+  display: grid;
+  gap: 10px;
+}
+
+.sub-gallery img {
+  display: block;
+  width: 100%;
+  max-height: 560px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #0c0c10;
+}
+
+.sub-gallery.multi {
+  grid-template-columns: 1fr 1fr;
+}
+
+.sub-gallery.multi img:first-child {
+  grid-column: 1 / -1;
+  max-height: 520px;
 }
 
 .brand {
@@ -2278,6 +2399,10 @@ a {
   .bounty-title {
     font-size: 26px;
     overflow-wrap: anywhere;
+  }
+
+  .sub-gallery.multi {
+    grid-template-columns: 1fr;
   }
 
   .pool-card,

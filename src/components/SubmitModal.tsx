@@ -64,15 +64,17 @@ export function SubmitModal({
 
   async function addFiles(list: FileList | File[]) {
     setError(null)
-    const incoming = [...list]
-    for (const file of incoming) {
+    let next = files
+    for (const file of [...list]) {
+      if (next.length >= 4) break
       try {
         const data = await readBountyImage(file)
-        setFiles((current) => [...current, data].slice(0, 4))
+        next = [...next, data]
       } catch (err) {
         setError(toErrorMessage(err) || 'Use an image, or put other files behind a link.')
       }
     }
+    setFiles(next)
   }
 
   function onDrop(event: DragEvent) {
@@ -138,6 +140,7 @@ export function SubmitModal({
       const next = await submitProof(bounty.id, hunter, cleanLinks.join('\n'), {
         note: description.trim(),
         image: files[0] ?? null,
+        images: files,
       })
       onSubmitted(next)
       onClose()
@@ -234,7 +237,7 @@ export function SubmitModal({
         >
           <p className="mt-0 mb-1 font-semibold">Drop files here</p>
           <p className="mt-0 mb-3 text-[13px] text-muted">
-            Photos of the work, screenshots, or stills. Put videos and PDFs behind a link.
+            Add up to 4 photos of the work. Put videos and PDFs behind a link.
           </p>
           <label className="btn-ghost inline-block">
             Choose files
@@ -250,8 +253,16 @@ export function SubmitModal({
           </label>
           {files.length > 0 ? (
             <div className="drop-thumbs">
-              {files.map((src) => (
-                <img key={src.slice(0, 48)} src={src} alt="" />
+              {files.map((src, index) => (
+                <button
+                  key={`${index}-${src.slice(-24)}`}
+                  type="button"
+                  className="drop-thumb"
+                  onClick={() => setFiles((current) => current.filter((_, i) => i !== index))}
+                  aria-label={`Remove photo ${index + 1}`}
+                >
+                  <img src={src} alt="" />
+                </button>
               ))}
             </div>
           ) : null}

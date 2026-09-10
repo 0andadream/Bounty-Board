@@ -9,6 +9,7 @@ export type BountyEntry = {
   proof: string | null
   proofNote: string | null
   proofImage: string | null
+  proofImages?: string[]
   status: EntryStatus
   txHash: string | null
   submittedAt: number

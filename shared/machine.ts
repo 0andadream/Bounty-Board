@@ -1,6 +1,13 @@
 import { sameAddress } from './address.ts'
 import type { Bounty, BountyEntry, MachineResult, StoredStatus, ViewStatus } from './types.ts'
 
+export function entryImages(entry: Pick<BountyEntry, 'proofImage' | 'proofImages'>): string[] {
+  if (entry.proofImages && entry.proofImages.length > 0) {
+    return entry.proofImages.filter(Boolean)
+  }
+  return entry.proofImage ? [entry.proofImage] : []
+}
+
 export function winnersMax(bounty: Pick<Bounty, 'winners'>): number {
   const n = Number(bounty.winners ?? 1)
   if (!Number.isFinite(n) || n < 1) return 1
@@ -17,6 +24,7 @@ export function listEntries(bounty: Pick<Bounty, 'entries' | 'hunter' | 'proof' 
       proof: bounty.proof ?? null,
       proofNote: bounty.proofNote ?? null,
       proofImage: bounty.proofImage ?? null,
+      proofImages: bounty.proofImage ? [bounty.proofImage] : [],
       status: bounty.status === 'paid' ? 'paid' : 'submitted',
       txHash: bounty.txHash ?? null,
       submittedAt: bounty.submittedAt ?? bounty.claimedAt ?? 0,
@@ -133,6 +141,7 @@ export function applySubmit(bounty: Bounty, hunter: string, proof: string, now: 
     proof: proof.trim(),
     proofNote: null,
     proofImage: null,
+    proofImages: [],
     status: 'submitted',
     txHash: null,
     submittedAt: now,

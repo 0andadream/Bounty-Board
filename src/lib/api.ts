@@ -124,11 +124,17 @@ export async function submitProof(
   id: string,
   hunter: string,
   proof: string,
-  extra: { note?: string; image?: string | null } = {},
+  extra: { note?: string; image?: string | null; images?: string[] } = {},
 ): Promise<Bounty> {
   const body = await request<{ bounty: Bounty }>(`/api/bounties/${id}/submit`, {
     method: 'POST',
-    body: JSON.stringify({ hunter, proof, note: extra.note ?? '', image: extra.image ?? null }),
+    body: JSON.stringify({
+      hunter,
+      proof,
+      note: extra.note ?? '',
+      image: extra.image ?? extra.images?.[0] ?? null,
+      images: extra.images ?? (extra.image ? [extra.image] : []),
+    }),
   })
   return body.bounty
 }

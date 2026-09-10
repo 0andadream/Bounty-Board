@@ -1,4 +1,12 @@
-import { isAccepting, listEntries, openSlots, paidCount, viewStatus, winnersMax } from '@shared/machine.ts'
+import {
+  entryImages,
+  isAccepting,
+  listEntries,
+  openSlots,
+  paidCount,
+  viewStatus,
+  winnersMax,
+} from '@shared/machine.ts'
 import { awaitingPay, posterPaidLabel } from '@shared/trust.ts'
 import { lunaFromNimMinor, parseToMinor } from '@shared/money.ts'
 import { sameAddress } from '@shared/address.ts'
@@ -36,6 +44,7 @@ export function BountyDetail() {
   const [busy, setBusy] = useState<string | null>(null)
   const [now, setNow] = useState(Date.now())
   const [reload, setReload] = useState(0)
+  const [feedTab, setFeedTab] = useState<'submissions' | 'winners' | 'contributors'>('submissions')
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000)
@@ -207,80 +216,128 @@ export function BountyDetail() {
         ) : null}
         {awaitingPay(ticket, now) ? <Banner>Awaiting pay. Hunter submitted and is waiting on the poster.</Banner> : null}
 
-        <div className="bounty-hero">
-          {bounty.imageUrl ? (
-            <img src={bounty.imageUrl} alt="" />
-          ) : (
-            <div className="bounty-hero-fallback" style={{ background: '#16161c' }}>
-              <span>{bounty.id.slice(0, 2)}</span>
-            </div>
-          )}
-        </div>
-
-        <section className="mt-6">
-          <h2 className="pool-kicker mt-0 mb-3">The brief</h2>
+        <section className="brief-box">
           <p className="mt-0 mb-0 text-[15px] leading-relaxed whitespace-pre-wrap">{bounty.brief}</p>
         </section>
 
-        {isPoster && entries.length === 0 ? (
-          <section className="entry-card">
-            <h2 className="mt-0 mb-1 text-[22px] tracking-[-0.04em]">Entries for review</h2>
-            <p className="mt-0 mb-0 text-[14px] text-muted">
-              Nobody has submitted yet. Up to {maxWinners} hunter{maxWinners === 1 ? '' : 's'} can win. You pay each
-              one wallet-to-wallet.
-            </p>
-          </section>
+        {bounty.imageUrl ? (
+          <div className="bounty-hero">
+            <img src={bounty.imageUrl} alt="" />
+          </div>
         ) : null}
 
-        {entries.map((entry) => {
-          const mine = Boolean(myAddress && sameAddress(myAddress, entry.hunter))
-          return (
-            <section key={entry.hunter} className="entry-card">
-              <h2 className="mt-0 mb-1 text-[22px] tracking-[-0.04em]">
-                {entry.status === 'paid'
-                  ? 'Paid'
-                  : isPoster
-                    ? 'Entry for review'
-                    : mine
-                      ? 'Your entry'
-                      : 'Submitted work'}
-              </h2>
-              <div className="mb-3">
-                <PersonLine token={ticket.token} wallet={entry.hunter} profile={entry.hunterProfile} />
-              </div>
-              {entry.proofNote ? <p className="mt-0 mb-3 text-[15px] leading-relaxed">{entry.proofNote}</p> : null}
-              {entry.proof
-                ? entry.proof.split('\n').map((url) => (
-                    <p key={url} className="mt-0 mb-2 text-[14px]">
-                      <a href={url} target="_blank" rel="noreferrer">
-                        {url}
-                      </a>
-                    </p>
-                  ))
-                : null}
-              {entry.proofImage ? <img src={entry.proofImage} alt="" className="entry-preview" /> : null}
-              {isPoster && entry.status === 'submitted' ? (
-                <button
-                  className="btn-accent mt-4 py-3 px-5"
-                  type="button"
-                  disabled={busy !== null}
-                  onClick={() => void onPay(entry.hunter)}
-                >
-                  {busy === 'pay'
-                    ? 'Waiting on Nimiq Pay…'
-                    : `Pay hunter in ${bounty.token} · ${money(bounty.rewardMinor, bounty.token)}`}
-                </button>
-              ) : null}
-            </section>
-          )
-        })}
+        <section className="sub-feed">
+          <nav className="sub-tabs" aria-label="Bounty activity">
+            {(
+              [
+                { id: 'submissions' as const, label: 'Submissions', count: entries.length },
+                { id: 'winners' as const, label: 'Winners', count: paidWinners },
+                {
+                  id: 'contributors' as const,
+                  label: 'Contributors',
+                  count: new Set(entries.map((entry) => entry.hunter)).size,
+                },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`sub-tab ${feedTab === tab.id ? 'on' : ''}`}
+                onClick={() => setFeedTab(tab.id)}
+              >
+                {tab.label} <span>{tab.count}</span>
+              </button>
+            ))}
+          </nav>
 
-        {bounty.hunter ? (
-          <section className="mt-6">
-            <h2 className="pool-kicker mt-0 mb-3">Hunter</h2>
-            <PersonLine token={bounty.token} wallet={bounty.hunter} profile={bounty.hunterProfile} />
-          </section>
-        ) : null}
+          {feedTab === 'contributors' ? (
+            <div className="sub-list">
+              {entries.length === 0 ? (
+                <p className="text-muted">No contributors yet.</p>
+              ) : (
+                [...new Map(entries.map((entry) => [entry.hunter, entry])).values()].map((entry) => (
+                  <div key={entry.hunter} className="sub-card">
+                    <PersonLine token={ticket.token} wallet={entry.hunter} profile={entry.hunterProfile} />
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="sub-list">
+              {(feedTab === 'winners' ? entries.filter((entry) => entry.status === 'paid') : entries).length === 0 ? (
+                <p className="text-muted">
+                  {feedTab === 'winners'
+                    ? 'No winners yet.'
+                    : isPoster
+                      ? `Nobody has submitted yet. Up to ${maxWinners} hunter${maxWinners === 1 ? '' : 's'} can win.`
+                      : 'No submissions yet. Be the first.'}
+                </p>
+              ) : (
+                (feedTab === 'winners' ? entries.filter((entry) => entry.status === 'paid') : entries).map((entry) => {
+                  const photos = entryImages(entry)
+                  return (
+                    <article key={`${entry.hunter}-${entry.submittedAt}`} className="sub-card">
+                      <header className="sub-head">
+                        <Avatar profile={entry.hunterProfile} wallet={entry.hunter} />
+                        <div className="min-w-0">
+                          {entry.hunterProfile ? (
+                            <Link
+                              to={`/u/${entry.hunterProfile.username}`}
+                              className="no-underline font-semibold"
+                            >
+                              {entry.hunterProfile.username}
+                            </Link>
+                          ) : (
+                            <span className="font-semibold">
+                              {actorName(ticket.token, entry.hunter, entry.hunterProfile)}
+                            </span>
+                          )}
+                          <p className="m-0 text-[13px] text-muted">
+                            Published {entry.submittedAt ? timeAgo(entry.submittedAt, now) : 'just now'}
+                          </p>
+                        </div>
+                        <span className={`sub-pill ${entry.status === 'paid' ? 'win' : ''}`}>
+                          {entry.status === 'paid' ? 'Winner' : 'Submission'}
+                        </span>
+                      </header>
+                      {entry.proofNote ? (
+                        <p className="sub-note">{entry.proofNote}</p>
+                      ) : null}
+                      {entry.proof
+                        ? entry.proof.split('\n').map((url) => (
+                            <p key={url} className="mt-0 mb-2 text-[14px]">
+                              <a href={url} target="_blank" rel="noreferrer">
+                                {url}
+                              </a>
+                            </p>
+                          ))
+                        : null}
+                      {photos.length > 0 ? (
+                        <div className={`sub-gallery ${photos.length > 1 ? 'multi' : ''}`}>
+                          {photos.map((src, index) => (
+                            <img key={`${index}-${src.slice(-24)}`} src={src} alt="" />
+                          ))}
+                        </div>
+                      ) : null}
+                      {isPoster && entry.status === 'submitted' ? (
+                        <button
+                          className="btn-accent mt-4 py-3 px-5"
+                          type="button"
+                          disabled={busy !== null}
+                          onClick={() => void onPay(entry.hunter)}
+                        >
+                          {busy === 'pay'
+                            ? 'Waiting on Nimiq Pay…'
+                            : `Pay hunter in ${bounty.token} · ${money(bounty.rewardMinor, bounty.token)}`}
+                        </button>
+                      ) : null}
+                    </article>
+                  )
+                })
+              )}
+            </div>
+          )}
+        </section>
 
         <section className="mt-6">
           <h2 className="pool-kicker mt-0 mb-3">Timeline</h2>

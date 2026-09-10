@@ -232,9 +232,23 @@ function parseEntryJson(raw: string | null | undefined): BountyEntry[] {
   try {
     const parsed = JSON.parse(raw) as BountyEntry[]
     if (!Array.isArray(parsed)) return []
-    return parsed.filter((entry) => entry && typeof entry.hunter === 'string')
+    return parsed.filter((entry) => entry && typeof entry.hunter === 'string').map(hydrateEntry)
   } catch {
     return []
+  }
+}
+
+function hydrateEntry(entry: BountyEntry): BountyEntry {
+  const images =
+    Array.isArray(entry.proofImages) && entry.proofImages.length > 0
+      ? entry.proofImages.filter((value): value is string => typeof value === 'string' && value.length > 0)
+      : entry.proofImage
+        ? [entry.proofImage]
+        : []
+  return {
+    ...entry,
+    proofImages: images,
+    proofImage: images[0] ?? entry.proofImage ?? null,
   }
 }
 
@@ -245,6 +259,7 @@ function serializeEntries(entries: BountyEntry[]): string {
       proof: entry.proof,
       proofNote: entry.proofNote,
       proofImage: entry.proofImage,
+      proofImages: entry.proofImages ?? (entry.proofImage ? [entry.proofImage] : []),
       status: entry.status,
       txHash: entry.txHash,
       submittedAt: entry.submittedAt,
@@ -707,12 +722,17 @@ app.post('/api/bounties/:id/submit', async (c) => {
   const hunterRaw = typeof body?.hunter === 'string' ? body.hunter : ''
   const proofRaw = typeof body?.proof === 'string' ? body.proof.trim() : ''
   const note = typeof body?.note === 'string' ? body.note.trim() : ''
-  let image: string | null = null
+  let images: string[] = []
   try {
-    image = normalizeImage(body?.image)
+    const rawImages = Array.isArray(body?.images) ? body.images : body?.image ? [body.image] : []
+    for (const item of rawImages.slice(0, 4)) {
+      const parsed = normalizeImage(item)
+      if (parsed) images.push(parsed)
+    }
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : 'Invalid image.')
   }
+  const image = images[0] ?? null
   const bounty = await getBounty(c.env.DB, id)
   if (!bounty) return jsonError('Bounty not found.', 404, 'not_found')
   if (!isValidWallet(bounty.token, hunterRaw)) {
@@ -729,7 +749,7 @@ app.post('/api/bounties/:id/submit', async (c) => {
   if (!proofValue && !note) return jsonError('Add a link, photo, or note so the poster can review your work.')
   const required = bounty.proofType ?? 'any'
   if (required === 'url' && !proof) return jsonError('This bounty needs a proof URL.')
-  if (required === 'image' && !image) return jsonError('This bounty needs a proof photo.')
+  if (required === 'image' && images.length === 0) return jsonError('This bounty needs a proof photo.')
   if (required === 'text' && !note) return jsonError('This bounty needs a written note.')
 
   const hunter = normalizeWallet(bounty.token, hunterRaw)
@@ -742,6 +762,7 @@ app.post('/api/bounties/:id/submit', async (c) => {
     proof: proof || null,
     proofNote: note || null,
     proofImage: image,
+    proofImages: images,
     status: 'submitted',
     txHash: null,
     submittedAt: clock,
