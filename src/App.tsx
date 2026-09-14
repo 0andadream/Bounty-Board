@@ -11,7 +11,10 @@ import { MyWork } from './screens/MyWork.tsx'
 import { Probe } from './screens/Probe.tsx'
 import { ProfileScreen } from './screens/Profile.tsx'
 import { PublicProfile } from './screens/PublicProfile.tsx'
+import { Docs } from './screens/Docs.tsx'
+import { Privacy } from './screens/Privacy.tsx'
 import { Receipt } from './screens/Receipt.tsx'
+import { Terms } from './screens/Terms.tsx'
 
 function RootRoute() {
   const navigate = useNavigate()
@@ -57,6 +60,9 @@ export default function App() {
               <Route path="/b/:id" element={<BountyDetail />} />
               <Route path="/b/:id/receipt" element={<Receipt />} />
               <Route path="/probe" element={<Probe />} />
+              <Route path="/docs" element={<Docs />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
               <Route path="*" element={<FallbackRoute />} />
             </Route>
           </Routes>
