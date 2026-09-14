@@ -28,11 +28,6 @@ export function SiteFooter() {
           Open in Nimiq Pay
         </a>
       </p>
-      <p className="site-foot-deep">
-        <a href={PAY_MINIAPP_URL} target="_blank" rel="noreferrer">
-          {PAY_MINIAPP_URL}
-        </a>
-      </p>
       <p>Built for Nimiq Mini Apps Competition</p>
     </footer>
   )
