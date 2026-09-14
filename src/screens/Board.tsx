@@ -88,7 +88,7 @@ export function BoardScreen() {
         <div className="panel text-center mb-4">
           <p className="mt-0 mb-3 text-[15px] text-muted">The board is empty.</p>
           <Link to="/bounties?create=1" className="btn-accent no-underline">
-            Post the first bounty — 2 min
+            Post the first bounty, 2 min
           </Link>
         </div>
       ) : (
@@ -165,7 +165,7 @@ export function BoardScreen() {
             <>
               Nothing open yet.{' '}
               <Link to="/bounties?create=1" className="text-inherit">
-                Post the first bounty — 2 min
+                Post the first bounty, 2 min
               </Link>
             </>
           ) : (

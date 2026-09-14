@@ -112,7 +112,7 @@ export function Landing() {
           everyday tasks into earning opportunities with Nimiq.
         </p>
         <p className="land-sub">
-          From bug reports and design work to research and community tasks — if it needs doing, put a
+          From bug reports and design work to research and community tasks, if it needs doing, put a
           bounty on it.
         </p>
         <div className="land-cta">
@@ -140,7 +140,7 @@ export function Landing() {
         {stats.live === 0 && stats.review === 0 && stats.paid === 0 ? (
           <div className="land-cta">
             <Link to="/bounties?create=1" className="btn-accent land-cta-main no-underline">
-              Post the first bounty — 2 min
+              Post the first bounty, 2 min
             </Link>
           </div>
         ) : (

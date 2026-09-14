@@ -212,7 +212,7 @@ export function BountyDetail() {
         </div>
 
         {bounty.demo ? (
-          <Banner>Demo bounty — pay still goes to the hunter’s wallet when the poster pays.</Banner>
+          <Banner>Demo bounty, pay still goes to the hunter’s wallet when the poster pays.</Banner>
         ) : null}
         {awaitingPay(ticket, now) ? <Banner>Awaiting pay. Hunter submitted and is waiting on the poster.</Banner> : null}
 

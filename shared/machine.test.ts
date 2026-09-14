@@ -51,7 +51,7 @@ test('claim is first-come, poster cannot claim their own', () => {
   assert.equal(canClaim(claimed, 'NQ73 106V L6VH J0Y9 141L XMRC 2NJS AJ8S PAB9', now).ok, false)
 })
 
-test('expired bounty cannot be claimed — poster reposts', () => {
+test('expired bounty cannot be claimed, poster reposts', () => {
   const expired = bounty({ deadline: now - 1 })
   assert.equal(canClaim(expired, hunter, now).ok, false)
 })

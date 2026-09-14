@@ -43,7 +43,7 @@ export function Probe() {
           <Banner>Nimiq Pay provider detected. This check uses listAccounts().</Banner>
         ) : (
           <Banner>
-            Desktop mode. Connect opens Nimiq Hub in a popup — no need to load this inside Nimiq Pay.
+            Desktop mode. Connect opens Nimiq Hub in a popup, no need to load this inside Nimiq Pay.
           </Banner>
         )}
         <button className="btn-accent" type="button" disabled={busy} onClick={() => void runCheck()}>

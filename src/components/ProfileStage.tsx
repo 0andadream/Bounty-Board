@@ -246,11 +246,11 @@ export function ProfileStage({
           <dl className="profile-meta">
             <div>
               <dt>Location</dt>
-              <dd>{location || '—'}</dd>
+              <dd>{location || ','}</dd>
             </div>
             <div>
               <dt>Skills</dt>
-              <dd>{skills || '—'}</dd>
+              <dd>{skills || ','}</dd>
             </div>
           </dl>
           {unique.length === 0 && !own ? (

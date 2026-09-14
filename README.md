@@ -5,7 +5,7 @@
 [![NIM](https://img.shields.io/badge/pay-NIM%20%2B%20USDT-111111)](https://nimiq.dev/mini-apps)
 [![Competition](https://img.shields.io/badge/Nimiq-Mini%20Apps%20Cycle%20II-7828E8)](https://miniappscompetition.com/)
 
-**Live product: [bounty-board.xyz](https://bounty-board.xyz/)** — a two-sided bounty board inside [Nimiq Pay](https://nimiq.dev/mini-apps/).
+**Live product: [bounty-board.xyz](https://bounty-board.xyz/)**, a two-sided bounty board inside [Nimiq Pay](https://nimiq.dev/mini-apps/).
 
 Someone needs a task done. Someone else wants to earn. You post a spec with a **NIM** reward (USDT on Polygon is optional). A hunter submits proof. You pay them **wallet to wallet**. Board never holds the money. The receipt is the transaction hash.
 
@@ -89,7 +89,7 @@ Used:
 
 Not used, because they are not on the Mini App provider:
 
-- `getTransactionsByAddress()` — payment proof is the hash returned by `sendBasicTransactionWithData`.
+- `getTransactionsByAddress()`, payment proof is the hash returned by `sendBasicTransactionWithData`.
 
 Desktop uses Hub (`chooseAddress` + `checkout`) when `window.nimiq` is missing. USDT uses EIP-1193 `window.ethereum` on Polygon (`0xc2132D05D31c914a87C6611C10748AEb04B58e8F`). ERC-20 transfers cannot carry `BOUNTY:<id>:PAID`; the receipt still stores the Polygon hash.
 
@@ -171,7 +171,7 @@ npm run deploy          # build + wrangler deploy
 Follow [Load a local Mini App](https://nimiq.dev/mini-apps/development/load-local-mini-app):
 
 1. Phone and computer on the same Wi-Fi.
-2. `npm run dev` — Network URL, e.g. `http://192.168.1.42:5174`.
+2. `npm run dev`, Network URL, e.g. `http://192.168.1.42:5174`.
 3. Nimiq Pay → Mini Apps → Custom URL → that address.
 4. Open `/probe`. Tap **Run 3 requests**. `listAccounts()` must return a real address before anything else matters.
 
@@ -212,11 +212,11 @@ Cloudflare Git deploy: set **Build command** to `npm run build` so `./dist` exis
 
 ## Attribution
 
-**Wallets and NIM pay** — [Nimiq Pay Mini Apps](https://nimiq.dev/mini-apps), [Nimiq Hub](https://nimiq.github.io/hub/).
+**Wallets and NIM pay**, [Nimiq Pay Mini Apps](https://nimiq.dev/mini-apps), [Nimiq Hub](https://nimiq.github.io/hub/).
 
-**USDT** — Polygon USDT via `window.ethereum`.
+**USDT**, Polygon USDT via `window.ethereum`.
 
-**App** — Vite, React, TypeScript, Tailwind, Cloudflare Worker + D1, Hono.
+**App**, Vite, React, TypeScript, Tailwind, Cloudflare Worker + D1, Hono.
 
 Built for the [Nimiq Mini Apps Competition](https://miniappscompetition.com/), Cycle II.
 
