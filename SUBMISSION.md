@@ -6,4 +6,4 @@ It is for people who hire in DMs, designers, editors, researchers, then argue ab
 
 Trust without a vault: every bounty and profile shows how often that poster paid completed work, total settled in NIM and USDT, and unpaid-after-submit. After pay, `/b/:id/receipt` is shareable.
 
-Two phones see the same board because state lives on Cloudflare D1, not localStorage. Submit is first-come. Open it in Nimiq Pay (`nimiqpay://miniapp?url=bounty-board.xyz`). The wallet connects on launch, the board is the first screen, live NIM bounties are already up. Claim one, submit proof, pay, keep the receipt.
+Two phones see the same board because state lives on Cloudflare D1, not localStorage. Submit is first-come. Open it in Nimiq Pay: https://miniappscompetition.com/submissions/cycle2/0andadream . The wallet connects on launch, the board is the first screen, live NIM bounties are already up. Claim one, submit proof, pay, keep the receipt.

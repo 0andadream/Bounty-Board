@@ -3,7 +3,7 @@
 [![Live](https://img.shields.io/badge/live-bounty--board.xyz-d8ff3e)](https://bounty-board.xyz/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![NIM](https://img.shields.io/badge/pay-NIM%20%2B%20USDT-111111)](https://nimiq.dev/mini-apps)
-[![Competition](https://img.shields.io/badge/Nimiq-Mini%20Apps%20Cycle%20II-7828E8)](https://miniappscompetition.com/)
+[![Competition](https://img.shields.io/badge/Nimiq-Mini%20Apps%20Cycle%20II-7828E8)](https://miniappscompetition.com/submissions/cycle2/0andadream)
 
 **Live product: [bounty-board.xyz](https://bounty-board.xyz/)**, a two-sided bounty board inside [Nimiq Pay](https://nimiq.dev/mini-apps/).
 
@@ -15,12 +15,7 @@ This is **not** an escrow board and **not** a chat thread. Nimiq Pay already hol
 post a bounty → submit proof → pay in NIM → keep the receipt
 ```
 
-Open in Nimiq Pay:
-
-```
-nimiqpay://miniapp?url=bounty-board.xyz
-https://nimpay.app/miniapps/open/bounty-board.xyz
-```
+Open in Nimiq Pay: [miniappscompetition.com/submissions/cycle2/0andadream](https://miniappscompetition.com/submissions/cycle2/0andadream)
 
 ---
 

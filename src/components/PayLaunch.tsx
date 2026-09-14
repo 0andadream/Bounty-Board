@@ -1,17 +1,14 @@
-import { PAY_DEEP_LINK, PAY_WEB_LINK } from '../lib/links.ts'
+import { PAY_MINIAPP_URL } from '../lib/links.ts'
 import { shouldUseMiniApp } from '../providers/nimiq.ts'
 
 export function payLaunchHref(): string {
-  if (typeof navigator !== 'undefined' && /iPhone|iPad|Android/i.test(navigator.userAgent)) {
-    return PAY_DEEP_LINK
-  }
-  return PAY_WEB_LINK
+  return PAY_MINIAPP_URL
 }
 
 export function OpenInNimiqPay({ className = 'btn-ghost no-underline' }: { className?: string }) {
   if (typeof window !== 'undefined' && shouldUseMiniApp()) return null
   return (
-    <a className={className} href={payLaunchHref()}>
+    <a className={className} href={payLaunchHref()} target="_blank" rel="noreferrer">
       Open in Nimiq Pay
     </a>
   )
@@ -27,9 +24,15 @@ export function SiteFooter() {
           GitHub
         </a>
         {' · '}
-        <a href={PAY_DEEP_LINK}>Open in Nimiq Pay</a>
+        <a href={PAY_MINIAPP_URL} target="_blank" rel="noreferrer">
+          Open in Nimiq Pay
+        </a>
       </p>
-      <p className="site-foot-deep">{PAY_DEEP_LINK}</p>
+      <p className="site-foot-deep">
+        <a href={PAY_MINIAPP_URL} target="_blank" rel="noreferrer">
+          {PAY_MINIAPP_URL}
+        </a>
+      </p>
       <p>Built for Nimiq Mini Apps Competition</p>
     </footer>
   )
