@@ -1,11 +1,11 @@
 # Bounty Board
 
-[![Live](https://img.shields.io/badge/live-bounty--board.mattt--dreamer.workers.dev-d8ff3e)](https://bounty-board.mattt-dreamer.workers.dev/)
+[![Live](https://img.shields.io/badge/live-bounty--board.xyz-d8ff3e)](https://bounty-board.xyz/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![NIM](https://img.shields.io/badge/pay-NIM%20%2B%20USDT-111111)](https://nimiq.dev/mini-apps)
 [![Competition](https://img.shields.io/badge/Nimiq-Mini%20Apps%20Cycle%20II-7828E8)](https://miniappscompetition.com/)
 
-**Live product: [bounty-board.mattt-dreamer.workers.dev](https://bounty-board.mattt-dreamer.workers.dev/)** — a two-sided bounty board inside [Nimiq Pay](https://nimiq.dev/mini-apps/).
+**Live product: [bounty-board.xyz](https://bounty-board.xyz/)** — a two-sided bounty board inside [Nimiq Pay](https://nimiq.dev/mini-apps/).
 
 Someone needs a task done. Someone else wants to earn. You post a spec with a **NIM** reward (USDT on Polygon is optional). A hunter submits proof. You pay them **wallet to wallet**. Board never holds the money. The receipt is the transaction hash.
 
@@ -18,8 +18,8 @@ post a bounty → submit proof → pay in NIM → keep the receipt
 Open in Nimiq Pay:
 
 ```
-nimiqpay://miniapp?url=bounty-board.mattt-dreamer.workers.dev
-https://nimpay.app/miniapps/open/bounty-board.mattt-dreamer.workers.dev
+nimiqpay://miniapp?url=bounty-board.xyz
+https://nimpay.app/miniapps/open/bounty-board.xyz
 ```
 
 ---
@@ -43,15 +43,15 @@ Verified against `src/App.tsx`.
 
 | URL | Code | Purpose |
 |---|---|---|
-| [`/`](https://bounty-board.mattt-dreamer.workers.dev/) | `src/screens/Landing.tsx` | Landing (web). Mini App redirects to `/bounties`. |
-| [`/bounties`](https://bounty-board.mattt-dreamer.workers.dev/bounties) | `src/screens/Board.tsx` | The board. Feed, create modal, rail. |
-| [`/bounties?create=1`](https://bounty-board.mattt-dreamer.workers.dev/bounties?create=1) | `PostBountyModal` | Create bounty. |
-| [`/b/:id`](https://bounty-board.mattt-dreamer.workers.dev/bounties) | `src/screens/BountyDetail.tsx` | Brief, submissions feed, pay. |
-| [`/b/:id/receipt`](https://bounty-board.mattt-dreamer.workers.dev/) | `src/screens/Receipt.tsx` | Paid receipt. |
-| [`/mine`](https://bounty-board.mattt-dreamer.workers.dev/mine) | `src/screens/MyWork.tsx` | My bounties / my submissions. |
-| [`/profile`](https://bounty-board.mattt-dreamer.workers.dev/profile) | `src/screens/Profile.tsx` | Wallet profile (username, photo). |
-| [`/u/:username`](https://bounty-board.mattt-dreamer.workers.dev/) | `src/screens/PublicProfile.tsx` | Public profile + poster trust. |
-| [`/probe`](https://bounty-board.mattt-dreamer.workers.dev/probe) | `src/screens/Probe.tsx` | Official 3-request Pay provider check. |
+| [`/`](https://bounty-board.xyz/) | `src/screens/Landing.tsx` | Landing (web). Mini App redirects to `/bounties`. |
+| [`/bounties`](https://bounty-board.xyz/bounties) | `src/screens/Board.tsx` | The board. Feed, create modal, rail. |
+| [`/bounties?create=1`](https://bounty-board.xyz/bounties?create=1) | `PostBountyModal` | Create bounty. |
+| [`/b/:id`](https://bounty-board.xyz/bounties) | `src/screens/BountyDetail.tsx` | Brief, submissions feed, pay. |
+| [`/b/:id/receipt`](https://bounty-board.xyz/) | `src/screens/Receipt.tsx` | Paid receipt. |
+| [`/mine`](https://bounty-board.xyz/mine) | `src/screens/MyWork.tsx` | My bounties / my submissions. |
+| [`/profile`](https://bounty-board.xyz/profile) | `src/screens/Profile.tsx` | Wallet profile (username, photo). |
+| [`/u/:username`](https://bounty-board.xyz/) | `src/screens/PublicProfile.tsx` | Public profile + poster trust. |
+| [`/probe`](https://bounty-board.xyz/probe) | `src/screens/Probe.tsx` | Official 3-request Pay provider check. |
 | `/board` | redirect | → `/bounties` |
 | `/new` | redirect | → `/bounties?create=1` |
 
